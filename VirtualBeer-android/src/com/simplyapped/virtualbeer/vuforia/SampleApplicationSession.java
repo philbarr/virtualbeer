@@ -14,6 +14,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 
+import com.badlogic.gdx.Gdx;
 import com.qualcomm.vuforia.CameraCalibration;
 import com.qualcomm.vuforia.CameraDevice;
 import com.qualcomm.vuforia.Matrix44F;
@@ -96,6 +97,8 @@ public class SampleApplicationSession implements UpdateCallbackInterface
         m_activity.getWindow().setFlags(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        
+
         
         mVuforiaFlags = Vuforia.GL_20;
         
@@ -587,7 +590,7 @@ public class SampleApplicationSession implements UpdateCallbackInterface
             }
         }
         
-        config.setSize(new Vec2I(xSize, ySize));
+        config.setSize(new Vec2I(Gdx.graphics.getWidth(),Gdx.graphics.getHeight()));
         
         Log.i(LOGTAG, "Configure Video Background : Video (" + vm.getWidth()
             + " , " + vm.getHeight() + "), Screen (" + mScreenWidth + " , "
