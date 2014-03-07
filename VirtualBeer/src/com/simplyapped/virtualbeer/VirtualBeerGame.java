@@ -18,12 +18,8 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Button;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.utils.Array;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaSession;
 
@@ -41,8 +37,8 @@ public class VirtualBeerGame implements ApplicationListener {
 	private Environment environment;
 	private Stage stage;
 	private Label progress;
+
 	@Override
-	
 	public void create() {
 		modelBatch = new ModelBatch();
 		spriteBatch = new SpriteBatch();
@@ -86,7 +82,6 @@ public class VirtualBeerGame implements ApplicationListener {
 
 			Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 			Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-			
 			
 			vuforia.beginRendering();
 			vuforia.drawVideoBackground();
