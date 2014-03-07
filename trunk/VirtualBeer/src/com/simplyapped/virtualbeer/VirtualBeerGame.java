@@ -6,7 +6,6 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -18,8 +17,15 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.utils.Array;
-import com.simplyapped.libgdx.ext.vuforia.Vuforia;
+import com.simplyapped.libgdx.ext.vuforia.VuforiaSession;
 
 public class VirtualBeerGame implements ApplicationListener {
 
@@ -29,15 +35,19 @@ public class VirtualBeerGame implements ApplicationListener {
 	public AssetManager assets;
 	public Array<ModelInstance> instances = new Array<ModelInstance>();
 	public Environment lights;
-	private Vuforia vuforia;
+	private VuforiaSession vuforia;
 	private Model model;
 	private ModelInstance instance;
 	private Environment environment;
-
+	private Stage stage;
+	private Label progress;
 	@Override
+	
 	public void create() {
 		modelBatch = new ModelBatch();
-
+		spriteBatch = new SpriteBatch();
+		stage = new Stage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, spriteBatch);
+		Skin skin = new Skin(Gdx.files.internal("data/modeltrial.json"));
 		int width = Gdx.graphics.getWidth();
 		int height = Gdx.graphics.getHeight();
 		cam = new PerspectiveCamera(67, width, height);
@@ -58,7 +68,12 @@ public class VirtualBeerGame implements ApplicationListener {
 				Usage.Position | Usage.Normal);
 		
 		instance = new ModelInstance(model, 0f,0f,50f);
-		vuforia.onCreate();
+		
+		progress = new Label("Loading...",skin,"progress");
+		float offset = 15;
+		progress.setSize(Gdx.graphics.getWidth() / 3, Gdx.graphics.getHeight() / 8);
+		progress.setPosition(Gdx.graphics.getWidth() / 2 - progress.getWidth() / 2, offset );
+		stage.addActor(progress);
 		vuforia.onResize(width, height);
 	}
 
@@ -84,6 +99,8 @@ public class VirtualBeerGame implements ApplicationListener {
 			modelBatch.render(instance, environment);
 			modelBatch.end();
 
+			stage.act();
+			stage.draw();
 		}
 	}
 
@@ -91,9 +108,11 @@ public class VirtualBeerGame implements ApplicationListener {
 	public void dispose() {
 		modelBatch.dispose();
 		model.dispose();
+		vuforia.stop();
 	}
 
 	public void resume() {
+		vuforia.onResume();
 	}
 
 	public void resize(int width, int height) {
@@ -101,13 +120,14 @@ public class VirtualBeerGame implements ApplicationListener {
 	}
 
 	public void pause() {
+		vuforia.onPause();
 	}
 
-	public Vuforia getVuforia() {
+	public VuforiaSession getVuforia() {
 		return vuforia;
 	}
 
-	public void setVuforia(Vuforia vuforia) {
+	public void setVuforia(VuforiaSession vuforia) {
 		this.vuforia = vuforia;
 	}
 }

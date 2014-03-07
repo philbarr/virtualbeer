@@ -1,18 +1,13 @@
 package com.simplyapped.libgdx.ext.vuforia;
 
-public interface Vuforia {
+public interface VuforiaSession {
 	void beginRendering();
 	boolean drawVideoBackground();
 	void endRendering();
 	boolean isInited();
-	
-	/**
-	 * Field of view in degrees
-	 * @param fovDegrees
-	 */
-	void setFieldOfView(float fovDegrees);
-	float getFieldOfView();
-	
-	void onCreate();
+	void initAsync();
 	void onResize(int width, int height);
+	void onPause();
+	void onResume();
+	void stop();
 }
