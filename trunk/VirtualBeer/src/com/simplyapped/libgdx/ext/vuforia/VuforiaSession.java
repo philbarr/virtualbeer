@@ -10,4 +10,5 @@ public interface VuforiaSession {
 	void onPause();
 	void onResume();
 	void stop();
+	TargetBuilder getTargetBuilder();
 }
