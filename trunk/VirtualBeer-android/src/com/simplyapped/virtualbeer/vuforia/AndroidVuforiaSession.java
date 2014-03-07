@@ -28,6 +28,7 @@ import com.qualcomm.vuforia.VideoBackgroundConfig;
 import com.qualcomm.vuforia.VideoMode;
 import com.qualcomm.vuforia.Vuforia;
 import com.qualcomm.vuforia.Vuforia.UpdateCallbackInterface;
+import com.simplyapped.libgdx.ext.vuforia.TargetBuilder;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaException;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaSession;
 
@@ -718,7 +719,6 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
         
     }
     
-    
     // Returns true if Vuforia is initialized, the trackers started and the
     // tracker data loaded
     private boolean isARRunning()
@@ -726,25 +726,20 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
         return m_started;
     }
 
-
 	@Override
 	public void beginRendering() {
 		State currentState = Renderer.getInstance().begin();
-		
 	}
-
 
 	@Override
 	public boolean drawVideoBackground() {
 		return Renderer.getInstance().drawVideoBackground();
 	}
 
-
 	@Override
 	public void endRendering() {
 		Renderer.getInstance().end();
 	}
-
 
 	@Override
 	public boolean isInited() {
@@ -766,5 +761,9 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
             Log.e(LOGTAG, e.getString());
         }
 	}
-    
+
+	@Override
+	public TargetBuilder getTargetBuilder() {
+		return new AndroidTargetBuilder();
+	}
 }
