@@ -3,7 +3,7 @@
  All Rights Reserved.
  ==============================================================================*/
 
-package com.simplyapped.virtualbeer.vuforia;
+package com.simplyapped.libgdx.ext.vuforia;
 
 import android.app.Activity;
 import android.content.res.Configuration;
@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.WindowManager;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Matrix4;
 import com.qualcomm.vuforia.CameraCalibration;
 import com.qualcomm.vuforia.CameraDevice;
 import com.qualcomm.vuforia.DataSet;
@@ -21,16 +22,15 @@ import com.qualcomm.vuforia.PIXEL_FORMAT;
 import com.qualcomm.vuforia.Renderer;
 import com.qualcomm.vuforia.State;
 import com.qualcomm.vuforia.Tool;
+import com.qualcomm.vuforia.Trackable;
 import com.qualcomm.vuforia.Tracker;
 import com.qualcomm.vuforia.TrackerManager;
+import com.qualcomm.vuforia.Vec2F;
 import com.qualcomm.vuforia.Vec2I;
 import com.qualcomm.vuforia.VideoBackgroundConfig;
 import com.qualcomm.vuforia.VideoMode;
 import com.qualcomm.vuforia.Vuforia;
 import com.qualcomm.vuforia.Vuforia.UpdateCallbackInterface;
-import com.simplyapped.libgdx.ext.vuforia.TargetBuilder;
-import com.simplyapped.libgdx.ext.vuforia.VuforiaException;
-import com.simplyapped.libgdx.ext.vuforia.VuforiaSession;
 
 
 public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInterface
@@ -67,7 +67,12 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     // Stores orientation
     private boolean mIsPortrait = false;
 
+    // Store the DataSet in the session so that it's management can be correctly synchronized
 	private DataSet dataSetUserDef;
+
+	private VuforiaListener listener;
+
+	private boolean extendedTracking;
 
     public AndroidVuforiaSession(Activity activity)
     {
@@ -173,6 +178,16 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
         }
     }
     
+    @Override
+	public void startTrackers()
+    {
+    	// start trackers
+        Tracker imageTracker = TrackerManager.getInstance().getTracker(ImageTracker.getClassType());
+        if (imageTracker != null)
+        {
+    		imageTracker.start();
+        }
+    }
     
     // Stops any ongoing initialization, stops Vuforia
     public void stopAR() throws VuforiaException
@@ -334,17 +349,21 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     
     
     // Gets the projection matrix to be used for rendering
-    public Matrix44F getProjectionMatrix()
+    @Override
+	public Matrix4 getProjectionMatrix()
     {
-        return mProjectionMatrix;
+        return new Matrix4(mProjectionMatrix.getData());
     }
     
     
     // Callback called every cycle
     @Override
-    public void QCAR_onUpdate(State s)
+    public void QCAR_onUpdate(State state)
     {
-        
+        if (listener != null && state != null)
+        {
+        	listener.onUpdate(new AndroidVuforiaState(state));
+        }
     }
     
     
@@ -640,9 +659,8 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     // rendering
     private void setProjectionMatrix()
     {
-        CameraCalibration camCal = CameraDevice.getInstance()
-            .getCameraCalibration();
-        mProjectionMatrix = Tool.getProjectionGL(camCal, 10.0f, 5000.0f);
+        CameraCalibration camCal = CameraDevice.getInstance().getCameraCalibration();
+        mProjectionMatrix = Tool.getProjectionGL(camCal, 10f, 1000f);
     }
     
     
@@ -709,7 +727,8 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
             }
         }
         
-        config.setSize(new Vec2I(xSize, ySize));
+//        config.setSize(new Vec2I(xSize, ySize));
+        config.setSize(new Vec2I(mScreenWidth, mScreenHeight));
         
         Log.i(LOGTAG, "Configure Video Background : Video (" + vm.getWidth()
             + " , " + vm.getHeight() + "), Screen (" + mScreenWidth + " , "
@@ -727,8 +746,10 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     }
 
 	@Override
-	public void beginRendering() {
-		State currentState = Renderer.getInstance().begin();
+	public VuforiaState beginRendering() {
+		State state = Renderer.getInstance().begin();
+		
+		return new AndroidVuforiaState(state);
 	}
 
 	@Override
@@ -749,6 +770,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
 	@Override
 	public void onResize(int width, int height) {
 		Vuforia.onSurfaceChanged(width, height);
+		onConfigurationChanged();
 	}
 
 	@Override
@@ -763,7 +785,95 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
 	}
 
 	@Override
-	public TargetBuilder getTargetBuilder() {
-		return new AndroidTargetBuilder();
+	public VuforiaImageTargetBuilder getTargetBuilder() {
+		return new AndroidVuforiaImageTargetBuilder();
+	}
+
+
+	@Override
+	public void setListener(VuforiaListener listener) {
+		this.listener = listener;
+		
+	}
+
+
+	@Override
+	public void createTrackable(VuforiaTrackableSource source) {
+		TrackerManager trackerManager = TrackerManager.getInstance();
+        ImageTracker imageTracker = (ImageTracker) (trackerManager.getTracker(ImageTracker.getClassType()));
+        if (imageTracker != null)
+        {
+	        imageTracker.deactivateDataSet(dataSetUserDef);
+	        
+            // Clear the oldest target if the dataset is full or the dataset
+            // already contains five user-defined targets.
+            if (dataSetUserDef.hasReachedTrackableLimit()
+                || dataSetUserDef.getNumTrackables() >= 5)
+                dataSetUserDef.destroy(dataSetUserDef.getTrackable(0));
+            
+            if (isExtendedTracking() && dataSetUserDef.getNumTrackables() > 0)
+            {
+                // We need to stop the extended tracking for the previous target
+                // so we can enable it for the new one
+                int previousCreatedTrackableIndex = 
+                    dataSetUserDef.getNumTrackables() - 1;
+                
+                dataSetUserDef.getTrackable(previousCreatedTrackableIndex)
+                    .stopExtendedTracking();
+            }
+
+            Trackable trackable = dataSetUserDef.createTrackable(((AndroidVuforiaTrackableSource)source).getTrackableSource());
+            
+            // Reactivate current dataset
+            imageTracker.activateDataSet(dataSetUserDef);
+            
+            if (isExtendedTracking())
+            {
+                trackable.startExtendedTracking();
+            }
+        }
+	}
+
+	@Override
+	public double getFieldOfView()
+	{
+	    CameraCalibration  cameraCalibration = CameraDevice.getInstance().getCameraCalibration();
+
+	    Vec2F size = cameraCalibration.getSize();
+	    Vec2F focalLength = cameraCalibration.getFocalLength();
+
+	    
+		double fovRadians = 2 * Math.atan(0.5f * size.getData()[1] / focalLength.getData()[1]);
+		double fovDegrees = fovRadians * 180.0f / Math.PI;
+		return fovDegrees;
+	}
+
+	@Override
+	public boolean isExtendedTracking() {
+		return extendedTracking;
+	}
+
+
+	@Override
+	public void setExtendedTracking(boolean extendedTracking) {
+		this.extendedTracking = extendedTracking;
+	}
+
+
+	@Override
+	public boolean setFlash(boolean on) {
+		return CameraDevice.getInstance().setFlashTorchMode(on);
+	}
+	
+	@Override
+	public boolean setAutoFocus(boolean on){
+		if (on)
+		{
+			return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
+		}
+		else
+		{
+			return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_NORMAL);
+		}
 	}
 }

@@ -1,6 +1,6 @@
 package com.simplyapped.libgdx.ext.vuforia;
 
-public interface TargetBuilder {
+public interface VuforiaImageTargetBuilder {
 	int FRAME_QUALITY_NONE = 0;
 	int FRAME_QUALITY_LOW = 1;
 	int FRAME_QUALITY_MEDIUM = 2;
@@ -11,4 +11,5 @@ public interface TargetBuilder {
 	boolean isRunning();
 	int frameQuality();
 	boolean build(String name, float sceneSizeWidth);
+	VuforiaTrackableSource getTrackableSource();
 }

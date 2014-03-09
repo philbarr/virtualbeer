@@ -11,7 +11,8 @@ import android.widget.FrameLayout;
 
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
-import com.simplyapped.virtualbeer.vuforia.AndroidVuforiaSession;
+import com.simplyapped.libgdx.ext.ui.AndroidOSDialog;
+import com.simplyapped.libgdx.ext.vuforia.AndroidVuforiaSession;
 
 public class VirtualBeerActivity extends AndroidApplication {
     private static final String LOGTAG = VirtualBeerActivity.class.toString();
@@ -28,6 +29,7 @@ public class VirtualBeerActivity extends AndroidApplication {
         VirtualBeerGame game = new VirtualBeerGame();
         vuforia = new AndroidVuforiaSession(this);
 		game.setVuforia(vuforia);
+		game.setDialog(new AndroidOSDialog(this));
 		vuforia.initAsync();
 		view = initializeForView(game, cfg);
 		
