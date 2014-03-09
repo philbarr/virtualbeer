@@ -1,15 +1,12 @@
-package com.simplyapped.virtualbeer.vuforia;
+package com.simplyapped.libgdx.ext.vuforia;
 
-import android.util.Log;
-
+import com.qualcomm.vuforia.CameraDevice;
 import com.qualcomm.vuforia.ImageTargetBuilder;
 import com.qualcomm.vuforia.ImageTracker;
+import com.qualcomm.vuforia.TrackableSource;
 import com.qualcomm.vuforia.TrackerManager;
-import com.simplyapped.libgdx.ext.vuforia.TargetBuilder;
 
-public class AndroidTargetBuilder implements TargetBuilder {
-
-	private int targetBuilderCounter;
+public class AndroidVuforiaImageTargetBuilder implements VuforiaImageTargetBuilder {
 
 	@Override
 	public boolean startScan() {
@@ -123,5 +120,26 @@ public class AndroidTargetBuilder implements TargetBuilder {
             }
         }
 		return false;
+    }
+    
+    @Override
+    public VuforiaTrackableSource getTrackableSource()
+    {
+        TrackerManager trackerManager = TrackerManager.getInstance();
+        ImageTracker imageTracker = (ImageTracker) trackerManager.getTracker(ImageTracker.getClassType());
+        
+        if (imageTracker != null)
+        {
+            ImageTargetBuilder targetBuilder = imageTracker.getImageTargetBuilder();
+            if (targetBuilder != null)
+            {
+            	TrackableSource trackableSource = targetBuilder.getTrackableSource();
+            	if (trackableSource != null)
+				{
+            		return new AndroidVuforiaTrackableSource(trackableSource);
+				}
+            }
+        }
+        return null;
     }
 }
