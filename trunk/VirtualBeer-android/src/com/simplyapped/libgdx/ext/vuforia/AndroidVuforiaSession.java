@@ -16,6 +16,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.qualcomm.vuforia.CameraCalibration;
 import com.qualcomm.vuforia.CameraDevice;
 import com.qualcomm.vuforia.DataSet;
+import com.qualcomm.vuforia.HINT;
 import com.qualcomm.vuforia.ImageTracker;
 import com.qualcomm.vuforia.Matrix44F;
 import com.qualcomm.vuforia.PIXEL_FORMAT;
@@ -189,6 +190,12 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
         }
     }
     
+	@Override
+	public boolean setNumTrackablesHint(int numTrackables){
+		boolean set = Vuforia.setHint(HINT.HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, numTrackables);
+		return set;
+	}
+    
     // Stops any ongoing initialization, stops Vuforia
     public void stopAR() throws VuforiaException
     {
@@ -352,6 +359,10 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     @Override
 	public Matrix4 getProjectionMatrix()
     {
+    	if (mProjectionMatrix == null)
+    	{
+    		setProjectionMatrix();
+    	}
         return new Matrix4(mProjectionMatrix.getData());
     }
     
@@ -430,6 +441,10 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
         
         boolean result = CameraDevice.getInstance().setFocusMode(
             CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
+        if (listener!=null)
+        {
+        	listener.onInitDone(vuforiaException);
+        }
 	}
     
     // An async task to initialize Vuforia asynchronously.

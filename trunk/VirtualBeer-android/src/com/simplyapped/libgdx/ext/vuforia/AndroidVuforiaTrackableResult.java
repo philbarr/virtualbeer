@@ -21,83 +21,11 @@ public class AndroidVuforiaTrackableResult implements VuforiaTrackableResult {
 
 	@Override
 	public Matrix4 getPose() {
-		Matrix34F pose = result.getPose();
-		Matrix3 rotation = new Matrix3();
-		rotation.val = new float[]{
-				pose.getData()[0], pose.getData()[1], pose.getData()[2],
-				pose.getData()[4], pose.getData()[5], pose.getData()[6],
-				pose.getData()[8], pose.getData()[9], pose.getData()[10],
-		};
-		rotation.val = new float[]{
-				pose.getData()[0], pose.getData()[4], pose.getData()[8],
-				pose.getData()[1], pose.getData()[5], pose.getData()[9],
-				pose.getData()[2], pose.getData()[6], pose.getData()[10],
-		};
-		rotation.rotate(180);
-		
-		Matrix4 yet = new Matrix4();
-//		yet.set(new float[]{
-//				three.val[0], three.val[3], three.val[6], 0,
-//				three.val[1], three.val[4], three.val[7], 0,
-//				three.val[2], three.val[5], three.val[8], 0,
-//				pose.getData()[3], pose.getData()[7], pose.getData()[11],1
-//		});
-		yet.set(new float[]{
-				rotation.val[0], rotation.val[1], rotation.val[2], 0,
-				rotation.val[3], rotation.val[4], rotation.val[5], 0,
-				rotation.val[6], rotation.val[7], rotation.val[8], 0,
-				-pose.getData()[7], pose.getData()[3], pose.getData()[11],1
-		});
-		
-		float[] copyOf = Arrays.copyOf(rotation.val, 16);
-		copyOf[12] = pose.getData()[3];
-		copyOf[13] = pose.getData()[7];
-		copyOf[14] = pose.getData()[11];
-		copyOf[15] = 1f;
-		
-		Matrix44F m = Tool.convertPose2GLMatrix(pose);
-//		return new Matrix4(invertRowMajorToColumnMajor(m.getData()));
-//		float[] m4 = toM4(pose);
-		float[] data = m.getData();
-		float[] invertRowMajorToColumnMajor = invertRowMajorToColumnMajor(data);
-		Matrix4 matrix4 = new Matrix4(invertRowMajorToColumnMajor);
-//		Matrix4 matrix42 = new Matrix4(data);
-		Matrix4 matrix42 = new Matrix4(copyOf);
-//		return matrix4.rotate(0, 1, 0, 180);
-//		return matrix4;
-		return new Matrix4(data);
-//		return yet;
+		Matrix44F modelViewMatrix = Tool.convertPose2GLMatrix(result.getPose());
+		return new Matrix4(modelViewMatrix.getData());
 	}
 
-	private float[] toM4(Matrix34F matrix)
-	{
-		float[] m4 = Arrays.copyOf(matrix.getData(), 16);
-		m4[15] = 1;
-		return m4;
-	}
-	
-	private float[] invertRowMajorToColumnMajor(float[] rowMajor)
-	{
-		return new float[]
-		{
-			rowMajor[0], rowMajor[1], rowMajor[2], rowMajor[3],
-			rowMajor[4], rowMajor[5], rowMajor[6], rowMajor[7],
-			rowMajor[8], rowMajor[9], rowMajor[10], rowMajor[11],
-			rowMajor[12], rowMajor[13], rowMajor[14], rowMajor[15],
-		};
-	}
-	
-	private float[] invertRowMajorToColumnMajor2(float[] rowMajor)
-	{
-		return new float[]
-		{
-			1,0,0,0,
-			0,1,0,0,
-			0,0,1,0,
-			rowMajor[13], -rowMajor[12], rowMajor[14], 1,
-		};
-	}	
-	
+
 	@Override
 	public void setCameraPositionAndDirection(Camera cam) {
 			
