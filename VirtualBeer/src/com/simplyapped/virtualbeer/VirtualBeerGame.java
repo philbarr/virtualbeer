@@ -2,6 +2,7 @@ package com.simplyapped.virtualbeer;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -17,7 +18,6 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -25,6 +25,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.simplyapped.libgdx.ext.ui.OSDialog;
+import com.simplyapped.libgdx.ext.vuforia.VuforiaException;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaImageTargetBuilder;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaListener;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaSession;
@@ -52,7 +53,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener {
 	private boolean isScanning;
 	private boolean isBuilding;
 	private OSDialog dialog;
-	private boolean flashon;
+	private boolean flashstate;
 	private boolean focuson;
 	private int idx;
 	private boolean stopall;
@@ -70,6 +71,19 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener {
 				isBuilding = builder.build("beer" + idx++, Gdx.graphics.getWidth()/2);
 			}
 		});
+		stage.addListener(new ClickListener()
+		{
+			@Override
+			public boolean keyDown(InputEvent event, int keycode)
+			{
+				if (keycode == Keys.MENU || keycode == Keys.BACKSPACE)
+				{
+					flashstate = vuforia.setFlash(!flashstate) ? !flashstate : flashstate;
+					return true;
+				}
+				return false;
+			}
+		});
 		Skin skin = new Skin(Gdx.files.internal("data/modeltrial.json"));
 		
 		assets = new AssetManager(); 
@@ -81,7 +95,6 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener {
 		
 		cam = new PerspectiveCamera(fieldOfView, width, height);
 		cam.position.set(0f, 0f, 0f);
-		cam.lookAt(0, 0, 10000);
 		cam.near = 10f;
 		cam.far = 1000f;
 		cam.update();
@@ -91,20 +104,6 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener {
         light = new DirectionalLight().set(0.8f, 0.8f, 0.8f, 0f, 0f, 10f);
 		environment.add(light);
 
-		ModelBuilder modelBuilder = new ModelBuilder();
-		
-		float lineWidth = 10f;
-		float lineLength = 100f;
-		instances.add(new ModelInstance(modelBuilder.createBox(lineLength, lineWidth, lineWidth,
-						new Material(ColorAttribute.createDiffuse(Color.RED)),
-						Usage.Position | Usage.Normal), lineLength/2,0f,00f));
-		instances.add(new ModelInstance(modelBuilder.createBox(lineWidth, lineLength, lineWidth,
-				new Material(ColorAttribute.createDiffuse(Color.GREEN)),
-				Usage.Position | Usage.Normal), 0f,lineLength/2,0f));
-		instances.add(new ModelInstance(modelBuilder.createBox(lineWidth, lineWidth, lineLength,
-				new Material(ColorAttribute.createDiffuse(Color.BLUE)),
-				Usage.Position | Usage.Normal), 0f,0f,lineLength/2));
-		
 		boxPoseMatrix = new Label("Box Pose...",skin,"progress");
 		boxPoseMatrix.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight() / 2);
 		boxPoseMatrix.setPosition(0, Gdx.graphics.getHeight() /2);
@@ -124,6 +123,36 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener {
 		vuforia.setListener(this);
 		
 		Gdx.input.setInputProcessor(stage);
+		Gdx.input.setCatchMenuKey(true);
+	}
+
+	private void createAxisBoxes() {
+		ModelBuilder modelBuilder = new ModelBuilder();
+		float lineWidth = 10f;
+		float lineLength = 100f;
+		Model xBox = modelBuilder.createBox(lineLength, lineWidth, lineWidth,
+						new Material(ColorAttribute.createDiffuse(Color.RED)),
+						Usage.Position | Usage.Normal);
+		xBox.nodes.get(0).globalTransform.translate(lineLength/2, 0, 0);
+		xBox.calculateTransforms();
+		Model yBox = modelBuilder.createBox(lineWidth, lineLength, lineWidth,
+				new Material(ColorAttribute.createDiffuse(Color.GREEN)),
+				Usage.Position | Usage.Normal);
+		yBox.nodes.get(0).globalTransform.translate(0, lineLength/2, 0);
+		yBox.calculateTransforms();
+		Model zBox = modelBuilder.createBox(lineWidth, lineWidth, lineLength,
+				new Material(ColorAttribute.createDiffuse(Color.BLUE)),
+				Usage.Position | Usage.Normal);
+		zBox.nodes.get(0).localTransform.translate(0, 0, lineLength/2);
+		zBox.calculateTransforms();
+		
+		modelBuilder.begin();
+		modelBuilder.node("xBox", xBox).translation.add(lineLength/2, 0, 0);
+		modelBuilder.node("yBox", yBox).translation.add(0, lineLength/2, 0);
+		modelBuilder.node("zBox", zBox).translation.add(0, 0, lineLength/2);
+		Model total = modelBuilder.end();
+		
+		instances.add(new ModelInstance(total));
 	}
 
 	@Override
@@ -140,48 +169,29 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener {
 			
 			VuforiaState state = vuforia.beginRendering();
 			vuforia.drawVideoBackground();
-	//		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()); //TODO STILL NEEDED?!! Renderer was adjusting glViewport
 			renderables = state.getNumTrackableResults();
-			for (int i = 0; i < renderables ; i++) {
-				// Get the trackable:
-	            VuforiaTrackableResult trackableResult = state.getTrackableResult(i);
-	            cam.projection.set(vuforia.getProjectionMatrix());
-	            cam.view.set(trackableResult.getPose());
-	            cam.combined.set(cam.projection);
-	    		Matrix4.mul(cam.combined.val, cam.view.val);
-	    		
-	            modelBatch.begin(cam);
-//	            for (ModelInstance instance : instances) {
-//	            	instance.transform=trackableResult.getPose();
-//	            	instance.transform.val[14] = 300;
-//	            	instance.calculateTransforms();
-//				}
-	            
-	            modelBatch.render(instances, environment);
-	            modelBatch.render(instance, environment);
-	            modelBatch.end();
-//	            modelInstance.transform.scale(0, 0, -90f);
-//	            instance.transform.translate(0, 0, 3f);
-//	            instance.transform.scale(13f, 13f, 13f);
-//	            boxPoseMatrix.setText(mToS(instance.transform));
-//	            cam.update(false, vuforia.getProjectionMatrix());
-//	            cam.combined.set(vuforia.getProjectionMatrix());
-	            
-//	            projectionMatrix.setText(mToS(vuforia.getProjectionMatrix()) + "fov: " + vuforia.getFieldOfView());
-//	            cam.fieldOfView = (float) vuforia.getFieldOfView();
-//	            trackableResult.setCameraPositionAndDirection(cam);
-//	            cam.update();
-//	            light.direction.set(cam.direction);
-	            
+			
+			while (instances.size < renderables)
+			{
+				createAxisBoxes();
 			}
+			
+			cam.projection.set(vuforia.getProjectionMatrix());
+			cam.combined.set(cam.projection);
+			Matrix4.mul(cam.combined.val, cam.view.val);
+			
+			for (int i = 0; i < renderables ; i++) {
+	            VuforiaTrackableResult trackableResult = state.getTrackableResult(i);
+	            instances.get(i).transform.set(trackableResult.getPose());
+			}
+			modelBatch.begin(cam);
+			modelBatch.render(instances, environment);
+			modelBatch.end();
 
 			vuforia.endRendering();
 			stage.act();
 			stage.draw();
 		}
-//		if (builder != null)
-//		boxPoseMatrix.setText(isScanning + ":" + isBuilding + ":" + builder.frameQuality() + ":" + renderables);
-//		boxPoseMatrix.setPosition(0, 15 );
 	}
 
 	private String mToS(Matrix4 transform) {
@@ -236,7 +246,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener {
 			{
 				builder = vuforia.getTargetBuilder();
 				focuson = vuforia.setAutoFocus(true);
-				flashon = vuforia.setFlash(true);
+				
 			}
 			if (!isScanning && !isBuilding)
 			{
@@ -265,5 +275,10 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener {
 
 	public void setDialog(OSDialog dialog) {
 		this.dialog = dialog;
+	}
+
+	@Override
+	public void onInitDone(VuforiaException exception) {
+		vuforia.setNumTrackablesHint(5);
 	}
 }
