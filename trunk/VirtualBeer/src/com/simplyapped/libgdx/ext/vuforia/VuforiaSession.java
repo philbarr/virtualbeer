@@ -29,5 +29,7 @@ public interface VuforiaSession {
 	Matrix4 getProjectionMatrix();
 	public abstract double getFieldOfView();
 	boolean setNumTrackablesHint(int numTrackables);
+	boolean hasAutoFocus();
+	boolean hasFlash();
 	
 }
