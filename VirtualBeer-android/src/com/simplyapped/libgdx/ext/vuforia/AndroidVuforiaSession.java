@@ -7,6 +7,8 @@ package com.simplyapped.libgdx.ext.vuforia;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.WindowManager;
@@ -74,6 +76,9 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
 	private VuforiaListener listener;
 
 	private boolean extendedTracking;
+	
+	private boolean hasAutoFocus;
+	private boolean hasFlash;
 
     public AndroidVuforiaSession(Activity activity)
     {
@@ -187,9 +192,10 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
         if (imageTracker != null)
         {
     		imageTracker.start();
+    		
         }
     }
-    
+
 	@Override
 	public boolean setNumTrackablesHint(int numTrackables){
 		boolean set = Vuforia.setHint(HINT.HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, numTrackables);
@@ -890,5 +896,25 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
 		{
 			return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_NORMAL);
 		}
+	}
+
+	@Override
+	public boolean hasAutoFocus() {
+		return hasAutoFocus;
+	}
+
+
+	public void setHasAutoFocus(boolean hasAutoFocus) {
+		this.hasAutoFocus = hasAutoFocus;
+	}
+
+	@Override
+	public boolean hasFlash() {
+		return hasFlash;
+	}
+
+
+	public void setHasFlash(boolean hasFlash) {
+		this.hasFlash = hasFlash;
 	}
 }

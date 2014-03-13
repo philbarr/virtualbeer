@@ -1,5 +1,6 @@
 package com.simplyapped.virtualbeer;
 
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
@@ -28,6 +29,10 @@ public class VirtualBeerActivity extends AndroidApplication {
 
         VirtualBeerGame game = new VirtualBeerGame();
         vuforia = new AndroidVuforiaSession(this);
+        vuforia.setHasAutoFocus(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS));
+        vuforia.setHasFlash(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH));
+        
+        
 		game.setVuforia(vuforia);
 		game.setDialog(new AndroidOSDialog(this));
 		vuforia.initAsync();
