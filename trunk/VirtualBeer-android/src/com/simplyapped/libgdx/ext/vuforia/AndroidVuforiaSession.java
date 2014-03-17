@@ -39,7 +39,7 @@ import com.qualcomm.vuforia.Vuforia.UpdateCallbackInterface;
 public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInterface
 {
     
-    private static final String LOGTAG = "Vuforia_Sample_Applications";
+    private static final String LOGTAG = AndroidVuforiaSession.class.toString();
     
     // Reference to the current activity
     private Activity m_activity;
@@ -134,6 +134,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     // Starts Vuforia, initialize and starts the camera and start the trackers
     public void startAR(int camera) throws VuforiaException
     {
+    	Log.d(LOGTAG, "startAR");
         String error;
         mCamera = camera;
         if (!CameraDevice.getInstance().init(camera))
@@ -387,6 +388,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     // Manages the configuration changes
     public void onConfigurationChanged()
     {
+    	Log.d(LOGTAG, "onConfigurationChanged");
         updateActivityOrientation();
         
         if (isARRunning())
@@ -437,6 +439,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     }
     
     private void onInitARDone(VuforiaException vuforiaException) {
+    	Log.d(LOGTAG, "onInitARDone");
 		try
         {
             startAR(CameraDevice.CAMERA.CAMERA_DEFAULT);
@@ -566,9 +569,6 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
                 onInitARDone(vuforiaException);
             }
         }
-
-
-		
     }
     
     public boolean doLoadTrackersData()
@@ -708,7 +708,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     
     
     // Configures the video mode and sets offsets for the camera's image
-    private void configureVideoBackground()
+    private synchronized void configureVideoBackground()
     {
         CameraDevice cameraDevice = CameraDevice.getInstance();
         VideoMode vm = cameraDevice.getVideoMode(CameraDevice.MODE.MODE_DEFAULT);
@@ -748,8 +748,8 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
             }
         }
         
-//        config.setSize(new Vec2I(xSize, ySize));
-        config.setSize(new Vec2I(mScreenWidth, mScreenHeight));
+        config.setSize(new Vec2I(xSize, ySize));
+//        config.setSize(new Vec2I(mScreenWidth, mScreenHeight));
         
         Log.i(LOGTAG, "Configure Video Background : Video (" + vm.getWidth()
             + " , " + vm.getHeight() + "), Screen (" + mScreenWidth + " , "
@@ -790,6 +790,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
 
 	@Override
 	public void onResize(int width, int height) {
+		Log.d(LOGTAG, "onResize");
 		Vuforia.onSurfaceChanged(width, height);
 		onConfigurationChanged();
 	}
