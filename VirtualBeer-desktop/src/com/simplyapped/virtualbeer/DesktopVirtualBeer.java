@@ -9,8 +9,8 @@ public class DesktopVirtualBeer {
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
 		cfg.title = "VirtualBeer";
 		cfg.useGL20 = true;
-		cfg.width = 480;
-		cfg.height = 320;
+		cfg.width = 320;
+		cfg.height = 480;
 		
 		VirtualBeerGame game = new VirtualBeerGame();
 		game.setDialog(new DesktopOSDialog());
