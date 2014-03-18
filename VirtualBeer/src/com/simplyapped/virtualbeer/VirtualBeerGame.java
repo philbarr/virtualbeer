@@ -43,7 +43,7 @@ import com.simplyapped.libgdx.ext.vuforia.VuforiaTrackableSource;
 import com.simplyapped.virtualbeer.shader.BeerShaderProvider;
 
 public class VirtualBeerGame implements ApplicationListener, VuforiaListener, AnimationListener {
-	private static final String DATA = "data/beer.g3db";
+	private static final String DATA = "data/beer3.g3db";
 //	private static final String DATA = "data/cube.g3db";
 	public PerspectiveCamera cam;
 	public ModelBatch modelBatch;
@@ -118,8 +118,8 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 		//createAxisBoxes();
 		building = assets.get(DATA, Model.class);
         instance = new ModelInstance(building);
-		instance.transform.setToTranslation(0, 0, 50);
-		instance.transform.scl(250f);
+//		instance.transform.setToTranslation(0, 0, 50);
+//		instance.transform.scl(250f);
 		
 		instances.add(instance);
 		
@@ -184,7 +184,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 			cam.combined.set(cam.projection);
 			Matrix4.mul(cam.combined.val, cam.view.val);
 			
-			if (controller == null){
+			if (controller == null && building.animations != null && building.animations.size>0){
 				controller = new AnimationController(instance);
 				controller.animate(building.animations.get(0).id,1, this, 0);
 			}
@@ -249,23 +249,28 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 																-0.6080855f, -0.03241571f, -0.79320955f, 0.0f, 
 																19.917683f, 18.692945f, 545.3725f, 1.0f}));
 
-				controller = new AnimationController(instance);
-				controller.animate(building.animations.get(0).id,1, this, 0);
+				if (controller == null && building.animations != null && building.animations.size>0)
+				{
+					controller = new AnimationController(instance);
+					controller.animate(building.animations.get(0).id,1, this, 0);
+				}
 				desktopInited = true;
 			}
 			
 			
-			if (!animComplete)
-			{
-				controller.update(Gdx.graphics.getDeltaTime());				
-			}
-			if (animComplete)
-			{
-				for(Node node : instance.nodes)
+			if (controller != null){
+				if (!animComplete)
 				{
-					node.localTransform.setTranslation(new Vector3(0,0,0));
-					node.calculateLocalTransform();
-					node.calculateTransforms(true);
+					controller.update(Gdx.graphics.getDeltaTime());				
+				}
+				if (animComplete)
+				{
+					for(Node node : instance.nodes)
+					{
+						node.localTransform.setTranslation(new Vector3(0,0,0));
+						node.calculateLocalTransform();
+						node.calculateTransforms(true);
+					}
 				}
 			}
 			modelBatch.begin(cam);
