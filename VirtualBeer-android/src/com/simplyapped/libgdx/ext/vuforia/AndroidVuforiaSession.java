@@ -681,7 +681,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     private void setProjectionMatrix()
     {
         CameraCalibration camCal = CameraDevice.getInstance().getCameraCalibration();
-        mProjectionMatrix = Tool.getProjectionGL(camCal, 10f, 1000f);
+        mProjectionMatrix = Tool.getProjectionGL(camCal, 10f, 10000f);
     }
     
     
