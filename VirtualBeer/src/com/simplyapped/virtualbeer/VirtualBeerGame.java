@@ -43,11 +43,10 @@ import com.simplyapped.libgdx.ext.vuforia.VuforiaTrackableSource;
 import com.simplyapped.virtualbeer.shader.BeerShaderProvider;
 
 public class VirtualBeerGame implements ApplicationListener, VuforiaListener, AnimationListener {
-	private static final String DATA = "data/beer3.g3db";
+	private static final String DATA = "data/beer.g3db";
 //	private static final String DATA = "data/cube.g3db";
 	public PerspectiveCamera cam;
 	public ModelBatch modelBatch;
-	public SpriteBatch spriteBatch;
 	public AssetManager assets;
 	public Array<ModelInstance> instances = new Array<ModelInstance>();
 	public Environment lights;
@@ -69,16 +68,12 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 	private DirectionalLight light;
 	private int fieldOfView = 90;
 	private Model building;
-	private boolean desktopInited;
-	private BeerShaderProvider shaderProvider;
 	private boolean animComplete;
 	
 	@Override
 	public void create() {
-		shaderProvider = new BeerShaderProvider();
-		modelBatch = new ModelBatch(shaderProvider);
-		spriteBatch = new SpriteBatch();
-		stage = new Stage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, spriteBatch);
+		modelBatch = new ModelBatch();
+		stage = new Stage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 		stage.addListener(new ClickListener(){
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -99,7 +94,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 				return false;
 			}
 		});
-		Skin skin = new Skin(Gdx.files.internal("data/modeltrial.json"));
+		
 		
 		assets = new AssetManager(); 
         assets.load(DATA, Model.class);
@@ -111,15 +106,12 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 		cam = new PerspectiveCamera(fieldOfView, width, height);
 		
 		environment = new Environment();
-		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
-        light = new DirectionalLight().set(0.8f, 0.8f, 0.8f, 0f, 0f, 10f);
+		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 1f, 1f, 1f, 1f));
+        light = new DirectionalLight().set(1f, 1f, 1f, -1f, -1f, -1f);
 		environment.add(light);
 		
-		//createAxisBoxes();
 		building = assets.get(DATA, Model.class);
         instance = new ModelInstance(building);
-//		instance.transform.setToTranslation(0, 0, 50);
-//		instance.transform.scl(250f);
 		
 		instances.add(instance);
 		
@@ -132,43 +124,10 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 		Gdx.input.setCatchMenuKey(true);
 	}
 
-	private void createAxisBoxes() {
-		ModelBuilder modelBuilder = new ModelBuilder();
-		float lineWidth = 10f;
-		float lineLength = 100f;
-		Model xBox = modelBuilder.createBox(lineLength, lineWidth, lineWidth,
-						new Material(ColorAttribute.createDiffuse(Color.RED)),
-						Usage.Position | Usage.Normal);
-		xBox.nodes.get(0).globalTransform.translate(lineLength/2, 0, 0);
-		xBox.calculateTransforms();
-		Model yBox = modelBuilder.createBox(lineWidth, lineLength, lineWidth,
-				new Material(ColorAttribute.createDiffuse(Color.GREEN)),
-				Usage.Position | Usage.Normal);
-		yBox.nodes.get(0).globalTransform.translate(0, lineLength/2, 0);
-		yBox.calculateTransforms();
-		Model zBox = modelBuilder.createBox(lineWidth, lineWidth, lineLength,
-				new Material(ColorAttribute.createDiffuse(Color.BLUE)),
-				Usage.Position | Usage.Normal);
-		zBox.nodes.get(0).localTransform.translate(0, 0, lineLength/2);
-		zBox.calculateTransforms();
-		
-		modelBuilder.begin();
-		modelBuilder.node("xBox", xBox).translation.add(lineLength/2, 0, 0);
-		modelBuilder.node("yBox", yBox).translation.add(0, lineLength/2, 0);
-		modelBuilder.node("zBox", zBox).translation.add(0, 0, lineLength/2);
-		Model total = modelBuilder.end();
-		
-		instances.add(new ModelInstance(total));
-		
-		
-	}
-
 	@Override
 	public void render() {
 		int renderables = 0;
 		if ((vuforia!=null) && vuforia.isInited()) {
-			
-			
 			Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
@@ -207,11 +166,14 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 						for(Node node : instance.nodes)
 						{
 							node.localTransform.setTranslation(new Vector3(0,0,0));
+							
 							node.calculateLocalTransform();
 							node.calculateTransforms(true);
 						}
 					}
 				}
+				
+				light.direction.set(cam.direction);
 				modelBatch.begin(cam);
 				modelBatch.render(instances, environment);
 				modelBatch.end();
@@ -221,70 +183,6 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 			stage.act();
 			stage.draw();
 		}
-		else
-		{
-			Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-			
-			if (!desktopInited)
-			{
-				for (Node node : building.nodes) 
-				{
-					if (node.id.startsWith("Point"))
-					{
-						PointLight light = new PointLight();
-						light.position.set(node.globalTransform.val[12],node.globalTransform.val[13],node.globalTransform.val[14]);
-						environment.add(light);
-					}
-				}
-				cam.projection.set(new float[]{0.0f, -1.69032f, 0.0f, 0.0f, -2.25376f, 0.0f, 0.0f, 0.0f, 0.0f, -0.003125f, 1.002002f, 1.0f, 0.0f, 0.0f, -20.02002f, 0.0f});
-				cam.combined.set(new float[]{0.0f, 		-1.69032f, 	0.0f, 		0.0f, 
-											-2.25376f, 	0.0f, 		0.0f, 		0.0f, 
-											0.0f, 		-0.003125f, 1.002002f, 	1.0f, 
-											0.0f, 		0.0f, 		-20.02002f, 0.0f});
-				cam.direction.set(new float[]{0,0,-1});
-				cam.position.set(new float[]{0,0,0});
-				instance.transform.set(new Matrix4(new float[]{	0.65500414f, -0.58503735f, -0.47822696f, 0.0f, 
-																-0.44855505f, -0.8103584f, 0.3769852f, 0.0f, 
-																-0.6080855f, -0.03241571f, -0.79320955f, 0.0f, 
-																19.917683f, 18.692945f, 545.3725f, 1.0f}));
-
-				if (controller == null && building.animations != null && building.animations.size>0)
-				{
-					controller = new AnimationController(instance);
-					controller.animate(building.animations.get(0).id,1, this, 0);
-				}
-				desktopInited = true;
-			}
-			
-			
-			if (controller != null){
-				if (!animComplete)
-				{
-					controller.update(Gdx.graphics.getDeltaTime());				
-				}
-				if (animComplete)
-				{
-					for(Node node : instance.nodes)
-					{
-						node.localTransform.setTranslation(new Vector3(0,0,0));
-						node.calculateLocalTransform();
-						node.calculateTransforms(true);
-					}
-				}
-			}
-			modelBatch.begin(cam);
-			modelBatch.render(instance, environment);
-			modelBatch.end();
-		}
-	}
-
-	private String mToS(Matrix4 transform) {
-		return  
-				String.format("%.2g",transform.val[Matrix4.M00]) + "|" + String.format("%.2g",transform.val[Matrix4.M01]) + "|" + String.format("%.2g",transform.val[Matrix4.M02]) + "|" + String.format("%.2g",transform.val[Matrix4.M03]) + "])\n" + 
-				String.format("%.2g",transform.val[Matrix4.M10]) + "|" + String.format("%.2g",transform.val[Matrix4.M11]) + "|"	+ String.format("%.2g",transform.val[Matrix4.M12]) + "|" + String.format("%.2g",transform.val[Matrix4.M13]) + "])\n" + 
-				String.format("%.2g",transform.val[Matrix4.M20]) + "|" + String.format("%.2g",transform.val[Matrix4.M21]) + "|" + String.format("%.2g",transform.val[Matrix4.M22]) + "|" + String.format("%.2g",transform.val[Matrix4.M23]) + "])\n" + 
-				String.format("%.2g",transform.val[Matrix4.M30]) + "|" + String.format("%.2g",transform.val[Matrix4.M31]) + "|" + String.format("%.2g",transform.val[Matrix4.M32]) + "|" + String.format("%.2g",transform.val[Matrix4.M33]) + "])\n";
 	}
 
 	@Override
@@ -295,7 +193,6 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 		try {
 			assets.dispose();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
