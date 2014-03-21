@@ -4,32 +4,22 @@ import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.environment.PointLight;
 import com.badlogic.gdx.graphics.g3d.model.Node;
-import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationDesc;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController.AnimationListener;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.simplyapped.libgdx.ext.ui.OSDialog;
@@ -40,7 +30,6 @@ import com.simplyapped.libgdx.ext.vuforia.VuforiaSession;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaState;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaTrackableResult;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaTrackableSource;
-import com.simplyapped.virtualbeer.shader.BeerShaderProvider;
 
 public class VirtualBeerGame implements ApplicationListener, VuforiaListener, AnimationListener {
 	private static final String DATA = "data/beer.g3db";
@@ -54,7 +43,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 	private Model model;
 	private ModelInstance instance;
 	private Environment environment;
-	private Stage stage;
+	private MenuStage stage;
 	AnimationController controller = null;
 	private VuforiaImageTargetBuilder builder;
 	
@@ -73,27 +62,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 	@Override
 	public void create() {
 		modelBatch = new ModelBatch();
-		stage = new Stage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
-		stage.addListener(new ClickListener(){
-			@Override
-			public void clicked(InputEvent event, float x, float y) {
-				if (vuforia!=null)
-				isBuilding = builder.build("beer" + idx++, Gdx.graphics.getWidth()/2);
-			}
-		});
-		stage.addListener(new ClickListener()
-		{
-			@Override
-			public boolean keyDown(InputEvent event, int keycode)
-			{
-				if (keycode == Keys.MENU || keycode == Keys.BACKSPACE)
-				{
-					flashstate = vuforia.setFlash(!flashstate) ? !flashstate : flashstate;
-					return true;
-				}
-				return false;
-			}
-		});
+		stage = new MenuStage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 		
 		
 		assets = new AssetManager(); 
@@ -180,8 +149,12 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 			}
 
 			vuforia.endRendering();
-			stage.act();
-			stage.draw();
+			if (stage!=null)
+			{
+				stage.setHasFlash(vuforia.hasFlash());
+				stage.act();
+				stage.draw();
+			}
 		}
 	}
 
@@ -264,7 +237,9 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 	@Override
 	public void onInitDone(VuforiaException exception) {
 		if (vuforia!=null)
-		vuforia.setNumTrackablesHint(5);
+		{
+			vuforia.setNumTrackablesHint(5);
+		}
 	}
 
 	@Override
