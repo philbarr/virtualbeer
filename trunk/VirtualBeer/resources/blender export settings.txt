@@ -1,4 +1,0 @@
-FBX
-Z up
--X Forward
-Scale 20
