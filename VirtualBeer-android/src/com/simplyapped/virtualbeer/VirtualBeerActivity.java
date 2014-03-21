@@ -31,8 +31,6 @@ public class VirtualBeerActivity extends AndroidApplication {
         vuforia = new AndroidVuforiaSession(this);
         vuforia.setHasAutoFocus(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS));
         vuforia.setHasFlash(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH));
-        
-        
 		game.setVuforia(vuforia);
 		game.setDialog(new AndroidOSDialog(this));
 		vuforia.initAsync();
