@@ -7,4 +7,21 @@
 	    font: liberation-font,
 	  },
 	},
+	com.badlogic.gdx.scenes.scene2d.ui.Button$ButtonStyle: {
+		flash: {
+			up: btn_flash_off,
+			checked: btn_flash_on,
+		},
+		camera_small: {
+			up: btn_camera_small_on,
+			checked: btn_camera_small_off,
+		},
+		camera_large: {
+			up: btn_camera_large_on,
+			checked: btn_camera_large_off,
+		},
+		menu: {
+			up: btn_menu,
+		},
+	},
 }
