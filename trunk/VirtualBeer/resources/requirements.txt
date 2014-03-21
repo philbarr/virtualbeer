@@ -1,0 +1,20 @@
+Focus on screen tap
+Flash Button (If flash available)
+Scan Button (turns into Stop Button, then back to Scan Button)
+Directions
+ - Find something to put your Virtual Beer on, make sure it has plenty of contrast - not a blank piece of paper!
+ - a) Hover your phone over the target so that it fills the viewfinder and check the Quality Indicator. Use the flash if it's too dark.
+ - b) Hover your phone over the target so that it fills the viewfinder and check the Quality Indicator. Make sure it is not too dark.
+ - When the Quality Indicator turns green, press the Camera button.
+ --(ALWAYS SHOWN) Step back and enjoy! (Tap to dismiss)
+Image Quality Indicator
+Admob
+Menu
+ - Directions On/Off
+ - Virtual Beer-Full Pint link
+
+==============
+Sounds
+Music
+Animation
+i18n

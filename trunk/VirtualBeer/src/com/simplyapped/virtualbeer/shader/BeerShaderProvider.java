@@ -18,5 +18,4 @@ public class BeerShaderProvider extends DefaultShaderProvider {
 						Gdx.files.internal("data/default.libgdx.frag").readString()));
 		return shader;
 	}
-	
 }
