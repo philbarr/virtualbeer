@@ -26,7 +26,13 @@ public class AndroidVuforiaTrackableResult implements VuforiaTrackableResult {
 	}
 
 
-	@Override
+	/**
+	 * This gets the position of the camera from the position of the model, basically
+	 * inverting the modelview matrix. Not used at the moment
+	 * @param cam
+	 * @deprecated not needed at the moment
+	 */
+	@Deprecated
 	public void setCameraPositionAndDirection(Camera cam) {
 			
 		Matrix44F modelViewMatrix = Tool.convertPose2GLMatrix(result.getPose());
