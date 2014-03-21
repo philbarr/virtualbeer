@@ -1,0 +1,61 @@
+
+beermenu.png
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+btn_camera_large_on
+  rotate: false
+  xy: 364, 846
+  size: 438, 167
+  orig: 438, 167
+  offset: 0, 0
+  index: -1
+btn_camera_small_off
+  rotate: false
+  xy: 804, 846
+  size: 211, 167
+  orig: 211, 167
+  offset: 0, 0
+  index: -1
+btn_camera_small_on
+  rotate: false
+  xy: 2, 2
+  size: 211, 167
+  orig: 211, 167
+  offset: 0, 0
+  index: -1
+btn_flash_off
+  rotate: false
+  xy: 364, 677
+  size: 211, 167
+  orig: 211, 167
+  offset: 0, 0
+  index: -1
+btn_flash_on
+  rotate: false
+  xy: 215, 2
+  size: 211, 167
+  orig: 211, 167
+  offset: 0, 0
+  index: -1
+btn_menu
+  rotate: false
+  xy: 364, 508
+  size: 211, 167
+  orig: 211, 167
+  offset: 0, 0
+  index: -1
+buttonpanel
+  rotate: false
+  xy: 2, 171
+  size: 720, 200
+  orig: 720, 200
+  offset: 0, 0
+  index: -1
+viewfinder
+  rotate: false
+  xy: 2, 373
+  size: 360, 640
+  orig: 360, 640
+  offset: 0, 0
+  index: -1
