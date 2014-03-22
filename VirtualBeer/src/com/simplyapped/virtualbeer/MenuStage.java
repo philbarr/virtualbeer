@@ -1,24 +1,22 @@
 package com.simplyapped.virtualbeer;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.simplyapped.virtualbeer.MenuStage.MenuButtonListener.Action;
 
 public class MenuStage extends Stage {
-	static class MenuButtonListener extends ClickListener {
+	enum Action{
+		FLASH,
+		CAMERA,
+		MENU,
+		DIRECTIONS
+	}
+	class MenuButtonListener extends ClickListener {
 		private Action action;
-		enum Action{
-			FLASH,
-			CAMERA,
-			MENU,
-			DIRECTIONS
-		}
 		public MenuButtonListener(Action action) {
 			this.action = action;
 		}
@@ -26,10 +24,13 @@ public class MenuStage extends Stage {
 		public void clicked(InputEvent event, float x, float y) {
 			switch(action){
 				case FLASH:
+					((Button)event.getListenerActor()).setChecked(listener.flashButtonClicked());
 					break;
 				case CAMERA:
+					((Button)event.getListenerActor()).setChecked(listener.cameraButtonClicked());
 					break;
 				case MENU:
+//					((Button)event.getListenerActor()).
 					break;
 				case DIRECTIONS:
 					break;
@@ -43,9 +44,11 @@ public class MenuStage extends Stage {
 	private Table tableCameraLarge;
 
 	private boolean hasFlash;
+	private MenuStageListener listener;
 
-	public MenuStage(float width, float height, boolean keepAspect) {
+	public MenuStage(float width, float height, boolean keepAspect, MenuStageListener listener) {
 		super(width, height, keepAspect);
+		this.listener = listener;
 		
 		float panelHeight = Gdx.graphics.getHeight()/6;
 		float panelWidth = Gdx.graphics.getWidth();
