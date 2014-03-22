@@ -7,9 +7,8 @@ package com.simplyapped.libgdx.ext.vuforia;
 
 import android.app.Activity;
 import android.content.res.Configuration;
-import android.hardware.Camera;
-import android.hardware.Camera.CameraInfo;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 import android.view.WindowManager;
 
@@ -885,6 +884,11 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
 	@Override
 	public boolean setFlash(boolean on) {
 		return CameraDevice.getInstance().setFlashTorchMode(on);
+	}
+	
+	@Override
+	public boolean doFocus(){
+		return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
 	}
 	
 	@Override
