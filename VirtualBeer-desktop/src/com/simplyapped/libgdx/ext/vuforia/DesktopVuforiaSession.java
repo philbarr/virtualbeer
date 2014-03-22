@@ -126,4 +126,9 @@ public class DesktopVuforiaSession implements VuforiaSession {
 		this.hasFlash = hasFlash;
 	}
 
+	@Override
+	public boolean doFocus() {
+		return true;
+	}
+
 }
