@@ -9,7 +9,7 @@ public interface MenuStageListener {
 	/**
 	 * @return the new state of the camera (true for running, false for not running)
 	 */
-	boolean cameraButtonClicked();
+	void cameraButtonClicked();
 	
 	void doFocus();
 }
