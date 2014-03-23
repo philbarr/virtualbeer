@@ -131,4 +131,11 @@ public class DesktopVuforiaSession implements VuforiaSession {
 		return true;
 	}
 
+  @Override
+  public void clearAllTrackables()
+  {
+    // TODO Auto-generated method stub
+    
+  }
+
 }
