@@ -11,7 +11,6 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 import android.view.WindowManager;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Matrix4;
 import com.qualcomm.vuforia.CameraCalibration;
@@ -34,892 +33,872 @@ import com.qualcomm.vuforia.VideoMode;
 import com.qualcomm.vuforia.Vuforia;
 import com.qualcomm.vuforia.Vuforia.UpdateCallbackInterface;
 
-
 public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInterface
 {
-    
-    private static final String LOGTAG = AndroidVuforiaSession.class.toString();
-    
-    // Reference to the current activity
-    private Activity m_activity;
-    
-    // Flags
-    private boolean m_started = false;
 
-    
-    // The async tasks to initialize the Vuforia SDK:
-    private InitVuforiaTask mInitVuforiaTask;
-    private LoadTrackerTask mLoadTrackerTask;
-    
-    // An object used for synchronizing Vuforia initialization, dataset loading
-    // and the Android onDestroy() life cycle event. If the application is
-    // destroyed while a data set is still being loaded, then we wait for the
-    // loading operation to finish before shutting down Vuforia:
-    private Object mShutdownLock = new Object();
-    
-    // Vuforia initialization flags:
-    private int mVuforiaFlags = 0;
-    
-    // Holds the camera configuration to use upon resuming
-    private int mCamera = CameraDevice.CAMERA.CAMERA_DEFAULT;
-    
-    // Stores the projection matrix to use for rendering purposes
-    private Matrix44F mProjectionMatrix;
-    
-    // Stores orientation
-    private boolean mIsPortrait = false;
+  private static final String LOGTAG = AndroidVuforiaSession.class.toString();
 
-    // Store the DataSet in the session so that it's management can be correctly synchronized
-	private DataSet dataSetUserDef;
+  // Reference to the current activity
+  private Activity m_activity;
 
-	private VuforiaListener listener;
+  // Flags
+  private boolean m_started = false;
 
-	private boolean extendedTracking;
-	
-	private boolean hasAutoFocus;
-	private boolean hasFlash;
+  // The async tasks to initialize the Vuforia SDK:
+  private InitVuforiaTask mInitVuforiaTask;
+  private LoadTrackerTask mLoadTrackerTask;
 
-    public AndroidVuforiaSession(Activity activity)
+  // An object used for synchronizing Vuforia initialization, dataset loading
+  // and the Android onDestroy() life cycle event. If the application is
+  // destroyed while a data set is still being loaded, then we wait for the
+  // loading operation to finish before shutting down Vuforia:
+  private Object mShutdownLock = new Object();
+
+  // Vuforia initialization flags:
+  private int mVuforiaFlags = 0;
+
+  // Holds the camera configuration to use upon resuming
+  private int mCamera = CameraDevice.CAMERA.CAMERA_DEFAULT;
+
+  // Stores the projection matrix to use for rendering purposes
+  private Matrix44F mProjectionMatrix;
+
+  // Stores orientation
+  private boolean mIsPortrait = false;
+
+  // Store the DataSet in the session so that it's management can be correctly
+  // synchronized
+  private DataSet dataSetUserDef;
+
+  private VuforiaListener listener;
+
+  private boolean extendedTracking;
+
+  private boolean hasAutoFocus;
+  private boolean hasFlash;
+
+  public AndroidVuforiaSession(Activity activity)
+  {
+    this.m_activity = activity;
+  }
+
+  // Initializes Vuforia and sets up preferences.
+  public void initAsync()
+  {
+    VuforiaException vuforiaException = null;
+
+    // As long as this window is visible to the user, keep the device's
+    // screen turned on and bright:
+    m_activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+    mVuforiaFlags = Vuforia.GL_20;
+
+    // Initialize Vuforia SDK asynchronously to avoid blocking the
+    // main (UI) thread.
+    //
+    // NOTE: This task instance must be created and invoked on the
+    // UI thread and it can be executed only once!
+    if (mInitVuforiaTask != null)
     {
-        this.m_activity = activity;
+      String logMessage = "Cannot initialize SDK twice";
+      vuforiaException = new VuforiaException(VuforiaException.VUFORIA_ALREADY_INITIALIZATED, logMessage);
+      Log.e(LOGTAG, logMessage);
     }
-    
-    
-    // Initializes Vuforia and sets up preferences.
-    public void initAsync()
-    {
-        VuforiaException vuforiaException = null;
 
-        // As long as this window is visible to the user, keep the device's
-        // screen turned on and bright:
-        m_activity.getWindow().setFlags(
-            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
-            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        
-        mVuforiaFlags = Vuforia.GL_20;
-        
-        // Initialize Vuforia SDK asynchronously to avoid blocking the
-        // main (UI) thread.
-        //
-        // NOTE: This task instance must be created and invoked on the
-        // UI thread and it can be executed only once!
-        if (mInitVuforiaTask != null)
+    if (vuforiaException == null)
+    {
+      try
+      {
+        mInitVuforiaTask = new InitVuforiaTask();
+        mInitVuforiaTask.execute();
+      }
+      catch (Exception e)
+      {
+        String logMessage = "Initializing Vuforia SDK failed";
+        vuforiaException = new VuforiaException(VuforiaException.INITIALIZATION_FAILURE, logMessage);
+        Log.e(LOGTAG, logMessage);
+      }
+    }
+  }
+
+  // Starts Vuforia, initialize and starts the camera and start the trackers
+  public void startAR(int camera) throws VuforiaException
+  {
+    Log.d(LOGTAG, "startAR");
+    String error;
+    mCamera = camera;
+    if (!CameraDevice.getInstance().init(camera))
+    {
+      error = "Unable to open camera device: " + camera;
+      Log.e(LOGTAG, error);
+      throw new VuforiaException(VuforiaException.CAMERA_INITIALIZATION_FAILURE, error);
+    }
+
+    configureVideoBackground();
+
+    if (!CameraDevice.getInstance().selectVideoMode(CameraDevice.MODE.MODE_DEFAULT))
+    {
+      error = "Unable to set video mode";
+      Log.e(LOGTAG, error);
+      throw new VuforiaException(VuforiaException.CAMERA_INITIALIZATION_FAILURE, error);
+    }
+
+    if (!CameraDevice.getInstance().start())
+    {
+      error = "Unable to start camera device: " + camera;
+      Log.e(LOGTAG, error);
+      throw new VuforiaException(VuforiaException.CAMERA_INITIALIZATION_FAILURE, error);
+    }
+
+    Vuforia.setFrameFormat(PIXEL_FORMAT.RGB565, true);
+
+    setProjectionMatrix();
+
+    // start trackers
+    Tracker imageTracker = TrackerManager.getInstance().getTracker(ImageTracker.getClassType());
+    if (imageTracker != null)
+    {
+      imageTracker.start();
+    }
+
+    try
+    {
+      if (hasAutoFocus)
+      {
+        setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
+      }
+      else
+      {
+        setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);        
+      }
+    }
+    catch (VuforiaException exceptionTriggerAuto)
+    {
+      try
+      {
+        setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_NORMAL);
+      }
+      catch (Exception e)
+      {
+        // ok let's just leave it as it is
+      }
+    }
+  }
+
+  @Override
+  public void startTrackers()
+  {
+    // start trackers
+    Tracker imageTracker = TrackerManager.getInstance().getTracker(ImageTracker.getClassType());
+    if (imageTracker != null)
+    {
+      imageTracker.start();
+
+    }
+  }
+
+  @Override
+  public boolean setNumTrackablesHint(int numTrackables)
+  {
+    boolean set = Vuforia.setHint(HINT.HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, numTrackables);
+    return set;
+  }
+
+  // Stops any ongoing initialization, stops Vuforia
+  public void stopAR() throws VuforiaException
+  {
+    // Cancel potentially running tasks
+    if (mInitVuforiaTask != null && mInitVuforiaTask.getStatus() != InitVuforiaTask.Status.FINISHED)
+    {
+      mInitVuforiaTask.cancel(true);
+      mInitVuforiaTask = null;
+    }
+
+    if (mLoadTrackerTask != null && mLoadTrackerTask.getStatus() != LoadTrackerTask.Status.FINISHED)
+    {
+      mLoadTrackerTask.cancel(true);
+      mLoadTrackerTask = null;
+    }
+
+    mInitVuforiaTask = null;
+    mLoadTrackerTask = null;
+
+    m_started = false;
+
+    stopCamera();
+
+    // Ensure that all asynchronous operations to initialize Vuforia
+    // and loading the tracker datasets do not overlap:
+    synchronized (mShutdownLock)
+    {
+
+      boolean unloadTrackersResult;
+      boolean deinitTrackersResult;
+
+      // Destroy the tracking data set:
+      unloadTrackersResult = doUnloadTrackersData();
+
+      // Deinitialize the trackers:
+      deinitTrackersResult = doDeinitTrackers();
+
+      // Deinitialize Vuforia SDK:
+      Vuforia.deinit();
+
+      if (!unloadTrackersResult) throw new VuforiaException(VuforiaException.UNLOADING_TRACKERS_FAILURE, "Failed to unload trackers\' data");
+
+      if (!deinitTrackersResult) throw new VuforiaException(VuforiaException.TRACKERS_DEINITIALIZATION_FAILURE, "Failed to deinitialize trackers");
+
+    }
+  }
+
+  private boolean doUnloadTrackersData()
+  {
+    // Indicate if the trackers were unloaded correctly
+    boolean result = true;
+
+    // Get the image tracker:
+    TrackerManager trackerManager = TrackerManager.getInstance();
+    ImageTracker imageTracker = (ImageTracker) trackerManager.getTracker(ImageTracker.getClassType());
+    if (imageTracker == null)
+    {
+      result = false;
+      Log.d(LOGTAG, "Failed to destroy the tracking data set because the ImageTracker has not been initialized.");
+    }
+
+    if (dataSetUserDef != null)
+    {
+      if (imageTracker.getActiveDataSet() != null && !imageTracker.deactivateDataSet(dataSetUserDef))
+      {
+        Log.d(LOGTAG, "Failed to destroy the tracking data set because the data set could not be deactivated.");
+        result = false;
+      }
+
+      if (!imageTracker.destroyDataSet(dataSetUserDef))
+      {
+        Log.d(LOGTAG, "Failed to destroy the tracking data set.");
+        result = false;
+      }
+
+      Log.d(LOGTAG, "Successfully destroyed the data set.");
+      dataSetUserDef = null;
+    }
+
+    return result;
+  }
+
+  public boolean doInitTrackers()
+  {
+    // Indicate if the trackers were initialized correctly
+    boolean result = true;
+
+    // Initialize the image tracker:
+    TrackerManager trackerManager = TrackerManager.getInstance();
+    Tracker tracker = trackerManager.initTracker(ImageTracker.getClassType());
+    if (tracker == null)
+    {
+      Log.d(LOGTAG, "Failed to initialize ImageTracker.");
+      result = false;
+    }
+    else
+    {
+      Log.d(LOGTAG, "Successfully initialized ImageTracker.");
+    }
+
+    return result;
+  }
+
+  public boolean doDeinitTrackers()
+  {
+    // Indicate if the trackers were deinitialized correctly
+    boolean result = true;
+
+    TrackerManager tManager = TrackerManager.getInstance();
+    tManager.deinitTracker(ImageTracker.getClassType());
+
+    return result;
+  }
+
+  public boolean doStopTrackers()
+  {
+    // Indicate if the trackers were stopped correctly
+    boolean result = true;
+
+    Tracker imageTracker = TrackerManager.getInstance().getTracker(ImageTracker.getClassType());
+    if (imageTracker != null) imageTracker.stop();
+
+    return result;
+  }
+
+  // Resumes Vuforia, restarts the trackers and the camera
+  public void resumeAR() throws VuforiaException
+  {
+    // Vuforia-specific resume operation
+    Vuforia.onResume();
+
+    if (m_started) startAR(mCamera);
+  }
+
+  // Pauses Vuforia and stops the camera
+  public void pauseAR() throws VuforiaException
+  {
+    if (m_started) stopCamera();
+
+    Vuforia.onPause();
+  }
+
+  // Gets the projection matrix to be used for rendering
+  @Override
+  public Matrix4 getProjectionMatrix()
+  {
+    if (mProjectionMatrix == null)
+    {
+      setProjectionMatrix();
+    }
+    return new Matrix4(mProjectionMatrix.getData());
+  }
+
+  // Callback called every cycle
+  @Override
+  public void QCAR_onUpdate(State state)
+  {
+    if (listener != null && state != null)
+    {
+      listener.onUpdate(new AndroidVuforiaState(state));
+    }
+  }
+
+  // Manages the configuration changes
+  public void onConfigurationChanged()
+  {
+    Log.d(LOGTAG, "onConfigurationChanged");
+    updateActivityOrientation();
+
+    if (isARRunning())
+    {
+      // configure video background
+      configureVideoBackground();
+
+      // Update projection matrix:
+      setProjectionMatrix();
+    }
+
+  }
+
+  // Methods to be called to handle lifecycle
+  public void onResume()
+  {
+    // Vuforia-specific resume operation
+    Vuforia.onResume();
+
+    if (m_started) try
+    {
+      startAR(mCamera);
+    }
+    catch (VuforiaException e)
+    {
+      e.printStackTrace();
+    }
+  }
+
+  public void onPause()
+  {
+    if (m_started) stopCamera();
+
+    Vuforia.onPause();
+  }
+
+  public void onSurfaceChanged(int width, int height)
+  {
+    Vuforia.onSurfaceChanged(width, height);
+  }
+
+  public void onSurfaceCreated()
+  {
+    Vuforia.onSurfaceCreated();
+  }
+
+  private void onInitARDone(VuforiaException vuforiaException)
+  {
+    Log.d(LOGTAG, "onInitARDone");
+    try
+    {
+      startAR(CameraDevice.CAMERA.CAMERA_DEFAULT);
+    }
+    catch (VuforiaException e)
+    {
+      Log.e(LOGTAG, e.getString());
+    }
+
+    boolean result = CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
+    if (listener != null)
+    {
+      listener.onInitDone(vuforiaException);
+    }
+  }
+
+  // An async task to initialize Vuforia asynchronously.
+  private class InitVuforiaTask extends AsyncTask<Void, Integer, Boolean>
+  {
+    // Initialize with invalid value:
+    private int mProgressValue = -1;
+
+    protected Boolean doInBackground(Void... params)
+    {
+      // Prevent the onDestroy() method to overlap with initialization:
+      synchronized (mShutdownLock)
+      {
+        Vuforia.setInitParameters(m_activity, mVuforiaFlags);
+
+        do
         {
-            String logMessage = "Cannot initialize SDK twice";
-            vuforiaException = new VuforiaException(
-                VuforiaException.VUFORIA_ALREADY_INITIALIZATED,
-                logMessage);
+          // Vuforia.init() blocks until an initialization step is
+          // complete, then it proceeds to the next step and reports
+          // progress in percents (0 ... 100%).
+          // If Vuforia.init() returns -1, it indicates an error.
+          // Initialization is done when progress has reached 100%.
+          mProgressValue = Vuforia.init();
+
+          // Publish the progress value:
+          publishProgress(mProgressValue);
+
+          // We check whether the task has been canceled in the
+          // meantime (by calling AsyncTask.cancel(true)).
+          // and bail out if it has, thus stopping this thread.
+          // This is necessary as the AsyncTask will run to completion
+          // regardless of the status of the component that
+          // started is.
+        }
+        while (!isCancelled() && mProgressValue >= 0 && mProgressValue < 100);
+
+        return (mProgressValue > 0);
+      }
+    }
+
+    protected void onProgressUpdate(Integer... values)
+    {
+      // Do something with the progress value "values[0]", e.g. update
+      // splash screen, progress bar, etc.
+    }
+
+    protected void onPostExecute(Boolean result)
+    {
+      // Done initializing Vuforia, proceed to next application
+      // initialization status:
+
+      VuforiaException vuforiaException = null;
+
+      if (result)
+      {
+        Log.d(LOGTAG, "InitVuforiaTask.onPostExecute: Vuforia " + "initialization successful");
+
+        boolean initTrackersResult;
+        initTrackersResult = doInitTrackers();
+
+        if (initTrackersResult)
+        {
+          try
+          {
+            mLoadTrackerTask = new LoadTrackerTask();
+            mLoadTrackerTask.execute();
+          }
+          catch (Exception e)
+          {
+            String logMessage = "Loading tracking data set failed";
+            vuforiaException = new VuforiaException(VuforiaException.LOADING_TRACKERS_FAILURE, logMessage);
             Log.e(LOGTAG, logMessage);
-        }
-        
-        if (vuforiaException == null)
-        {
-            try
-            {
-                mInitVuforiaTask = new InitVuforiaTask();
-                mInitVuforiaTask.execute();
-            } catch (Exception e)
-            {
-                String logMessage = "Initializing Vuforia SDK failed";
-                vuforiaException = new VuforiaException(
-                    VuforiaException.INITIALIZATION_FAILURE,
-                    logMessage);
-                Log.e(LOGTAG, logMessage);
-            }
-        }
-    }
-    
-    
-    // Starts Vuforia, initialize and starts the camera and start the trackers
-    public void startAR(int camera) throws VuforiaException
-    {
-    	Log.d(LOGTAG, "startAR");
-        String error;
-        mCamera = camera;
-        if (!CameraDevice.getInstance().init(camera))
-        {
-            error = "Unable to open camera device: " + camera;
-            Log.e(LOGTAG, error);
-            throw new VuforiaException(
-                VuforiaException.CAMERA_INITIALIZATION_FAILURE, error);
-        }
-        
-        configureVideoBackground();
-        
-        if (!CameraDevice.getInstance().selectVideoMode(
-            CameraDevice.MODE.MODE_DEFAULT))
-        {
-            error = "Unable to set video mode";
-            Log.e(LOGTAG, error);
-            throw new VuforiaException(
-                VuforiaException.CAMERA_INITIALIZATION_FAILURE, error);
-        }
-        
-        if (!CameraDevice.getInstance().start())
-        {
-            error = "Unable to start camera device: " + camera;
-            Log.e(LOGTAG, error);
-            throw new VuforiaException(
-                VuforiaException.CAMERA_INITIALIZATION_FAILURE, error);
-        }
-        
-        Vuforia.setFrameFormat(PIXEL_FORMAT.RGB565, true);
-        
-        setProjectionMatrix();
-        
-        // start trackers
-        Tracker imageTracker = TrackerManager.getInstance().getTracker(ImageTracker.getClassType());
-        if (imageTracker != null)
-        {
-    		imageTracker.start();
-        }
-            
-        
-        try
-        {
-            setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
-        } catch (VuforiaException exceptionTriggerAuto)
-        {
-            setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_NORMAL);
-        }
-    }
-    
-    @Override
-	public void startTrackers()
-    {
-    	// start trackers
-        Tracker imageTracker = TrackerManager.getInstance().getTracker(ImageTracker.getClassType());
-        if (imageTracker != null)
-        {
-    		imageTracker.start();
-    		
-        }
-    }
-
-	@Override
-	public boolean setNumTrackablesHint(int numTrackables){
-		boolean set = Vuforia.setHint(HINT.HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, numTrackables);
-		return set;
-	}
-    
-    // Stops any ongoing initialization, stops Vuforia
-    public void stopAR() throws VuforiaException
-    {
-        // Cancel potentially running tasks
-        if (mInitVuforiaTask != null
-            && mInitVuforiaTask.getStatus() != InitVuforiaTask.Status.FINISHED)
-        {
-            mInitVuforiaTask.cancel(true);
-            mInitVuforiaTask = null;
-        }
-        
-        if (mLoadTrackerTask != null
-            && mLoadTrackerTask.getStatus() != LoadTrackerTask.Status.FINISHED)
-        {
-            mLoadTrackerTask.cancel(true);
-            mLoadTrackerTask = null;
-        }
-        
-        mInitVuforiaTask = null;
-        mLoadTrackerTask = null;
-        
-        m_started = false;
-        
-        stopCamera();
-        
-        // Ensure that all asynchronous operations to initialize Vuforia
-        // and loading the tracker datasets do not overlap:
-        synchronized (mShutdownLock)
-        {
-            
-            boolean unloadTrackersResult;
-            boolean deinitTrackersResult;
-            
-            // Destroy the tracking data set:
-            unloadTrackersResult = doUnloadTrackersData();
-            
-            // Deinitialize the trackers:
-            deinitTrackersResult = doDeinitTrackers();
-            
-            // Deinitialize Vuforia SDK:
-            Vuforia.deinit();
-            
-            if (!unloadTrackersResult)
-                throw new VuforiaException(
-                    VuforiaException.UNLOADING_TRACKERS_FAILURE,
-                    "Failed to unload trackers\' data");
-            
-            if (!deinitTrackersResult)
-                throw new VuforiaException(
-                    VuforiaException.TRACKERS_DEINITIALIZATION_FAILURE,
-                    "Failed to deinitialize trackers");
-            
-        }
-    }
-    private boolean doUnloadTrackersData()
-    {
-        // Indicate if the trackers were unloaded correctly
-        boolean result = true;
-        
-        // Get the image tracker:
-        TrackerManager trackerManager = TrackerManager.getInstance();
-        ImageTracker imageTracker = (ImageTracker) trackerManager
-            .getTracker(ImageTracker.getClassType());
-        if (imageTracker == null)
-        {
-            result = false;
-            Log.d(
-                LOGTAG,
-                "Failed to destroy the tracking data set because the ImageTracker has not been initialized.");
-        }
-        
-        if (dataSetUserDef != null)
-        {
-            if (imageTracker.getActiveDataSet() != null
-                && !imageTracker.deactivateDataSet(dataSetUserDef))
-            {
-                Log.d(
-                    LOGTAG,
-                    "Failed to destroy the tracking data set because the data set could not be deactivated.");
-                result = false;
-            }
-            
-            if (!imageTracker.destroyDataSet(dataSetUserDef))
-            {
-                Log.d(LOGTAG, "Failed to destroy the tracking data set.");
-                result = false;
-            }
-            
-            Log.d(LOGTAG, "Successfully destroyed the data set.");
-            dataSetUserDef = null;
-        }
-        
-        return result;
-    }
-    public boolean doInitTrackers()
-    {
-        // Indicate if the trackers were initialized correctly
-        boolean result = true;
-        
-        // Initialize the image tracker:
-        TrackerManager trackerManager = TrackerManager.getInstance();
-        Tracker tracker = trackerManager.initTracker(ImageTracker
-            .getClassType());
-        if (tracker == null)
-        {
-            Log.d(LOGTAG, "Failed to initialize ImageTracker.");
-            result = false;
-        } else
-        {
-            Log.d(LOGTAG, "Successfully initialized ImageTracker.");
-        }
-        
-        return result;
-    }
-    public boolean doDeinitTrackers()
-    {
-        // Indicate if the trackers were deinitialized correctly
-        boolean result = true;
-        
-        TrackerManager tManager = TrackerManager.getInstance();
-        tManager.deinitTracker(ImageTracker.getClassType());
-        
-        return result;
-    }
-    
-    public boolean doStopTrackers()
-    {
-        // Indicate if the trackers were stopped correctly
-        boolean result = true;
-        
-        Tracker imageTracker = TrackerManager.getInstance().getTracker(
-            ImageTracker.getClassType());
-        if (imageTracker != null)
-            imageTracker.stop();
-        
-        return result;
-    }
-    
-    // Resumes Vuforia, restarts the trackers and the camera
-    public void resumeAR() throws VuforiaException
-    {
-        // Vuforia-specific resume operation
-        Vuforia.onResume();
-        
-        if (m_started)
-            startAR(mCamera);
-    }
-    
-    
-    // Pauses Vuforia and stops the camera
-    public void pauseAR() throws VuforiaException
-    {
-        if (m_started)
-            stopCamera();
-        
-        Vuforia.onPause();
-    }
-    
-    
-    // Gets the projection matrix to be used for rendering
-    @Override
-	public Matrix4 getProjectionMatrix()
-    {
-    	if (mProjectionMatrix == null)
-    	{
-    		setProjectionMatrix();
-    	}
-        return new Matrix4(mProjectionMatrix.getData());
-    }
-    
-    
-    // Callback called every cycle
-    @Override
-    public void QCAR_onUpdate(State state)
-    {
-        if (listener != null && state != null)
-        {
-        	listener.onUpdate(new AndroidVuforiaState(state));
-        }
-    }
-    
-    
-    // Manages the configuration changes
-    public void onConfigurationChanged()
-    {
-    	Log.d(LOGTAG, "onConfigurationChanged");
-        updateActivityOrientation();
-        
-        if (isARRunning())
-        {
-            // configure video background
-            configureVideoBackground();
-            
-            // Update projection matrix:
-            setProjectionMatrix();
-        }
-        
-    }
-    
-    
-    // Methods to be called to handle lifecycle
-    public void onResume()
-    {
-        // Vuforia-specific resume operation
-        Vuforia.onResume();
-        
-        if (m_started)
-			try {
-				startAR(mCamera);
-			} catch (VuforiaException e) {
-				e.printStackTrace();
-			}
-    }
-    
-    
-    public void onPause()
-    {
-        if (m_started)
-            stopCamera();
-        
-        Vuforia.onPause();
-    }
-    
-    
-    public void onSurfaceChanged(int width, int height)
-    {
-        Vuforia.onSurfaceChanged(width, height);
-    }
-    
-    
-    public void onSurfaceCreated()
-    {
-        Vuforia.onSurfaceCreated();
-    }
-    
-    private void onInitARDone(VuforiaException vuforiaException) {
-    	Log.d(LOGTAG, "onInitARDone");
-		try
-        {
-            startAR(CameraDevice.CAMERA.CAMERA_DEFAULT);
-        } catch (VuforiaException e)
-        {
-            Log.e(LOGTAG, e.getString());
-        }
-        
-        boolean result = CameraDevice.getInstance().setFocusMode(
-            CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
-        if (listener!=null)
-        {
-        	listener.onInitDone(vuforiaException);
-        }
-	}
-    
-    // An async task to initialize Vuforia asynchronously.
-    private class InitVuforiaTask extends AsyncTask<Void, Integer, Boolean>
-    {
-        // Initialize with invalid value:
-        private int mProgressValue = -1;
-        
-        
-        protected Boolean doInBackground(Void... params)
-        {
-            // Prevent the onDestroy() method to overlap with initialization:
-            synchronized (mShutdownLock)
-            {
-                Vuforia.setInitParameters(m_activity, mVuforiaFlags);
-                
-                do
-                {
-                    // Vuforia.init() blocks until an initialization step is
-                    // complete, then it proceeds to the next step and reports
-                    // progress in percents (0 ... 100%).
-                    // If Vuforia.init() returns -1, it indicates an error.
-                    // Initialization is done when progress has reached 100%.
-                    mProgressValue = Vuforia.init();
-                    
-                    // Publish the progress value:
-                    publishProgress(mProgressValue);
-                    
-                    // We check whether the task has been canceled in the
-                    // meantime (by calling AsyncTask.cancel(true)).
-                    // and bail out if it has, thus stopping this thread.
-                    // This is necessary as the AsyncTask will run to completion
-                    // regardless of the status of the component that
-                    // started is.
-                } while (!isCancelled() && mProgressValue >= 0
-                    && mProgressValue < 100);
-                
-                return (mProgressValue > 0);
-            }
-        }
-        
-        
-        protected void onProgressUpdate(Integer... values)
-        {
-            // Do something with the progress value "values[0]", e.g. update
-            // splash screen, progress bar, etc.
-        }
-        
-        
-        protected void onPostExecute(Boolean result)
-        {
-            // Done initializing Vuforia, proceed to next application
-            // initialization status:
-            
-            VuforiaException vuforiaException = null;
-            
-            if (result)
-            {
-                Log.d(LOGTAG, "InitVuforiaTask.onPostExecute: Vuforia "
-                    + "initialization successful");
-                
-                boolean initTrackersResult;
-                initTrackersResult = doInitTrackers();
-                
-                if (initTrackersResult)
-                {
-                    try
-                    {
-                        mLoadTrackerTask = new LoadTrackerTask();
-                        mLoadTrackerTask.execute();
-                    } catch (Exception e)
-                    {
-                        String logMessage = "Loading tracking data set failed";
-                        vuforiaException = new VuforiaException(
-                            VuforiaException.LOADING_TRACKERS_FAILURE,
-                            logMessage);
-                        Log.e(LOGTAG, logMessage);
-                        onInitARDone(vuforiaException);
-                    }
-                    
-                } else
-                {
-                    vuforiaException = new VuforiaException(
-                        VuforiaException.TRACKERS_INITIALIZATION_FAILURE,
-                        "Failed to initialize trackers");
-                    onInitARDone(vuforiaException);
-                }
-            } else
-            {
-                String logMessage;
-                
-                // NOTE: Check if initialization failed because the device is
-                // not supported. At this point the user should be informed
-                // with a message.
-                if (mProgressValue == Vuforia.INIT_DEVICE_NOT_SUPPORTED)
-                {
-                    logMessage = "Failed to initialize Vuforia because this "
-                        + "device is not supported.";
-                } else
-                {
-                    logMessage = "Failed to initialize Vuforia.";
-                }
-                
-                // Log error:
-                Log.e(LOGTAG, "InitVuforiaTask.onPostExecute: " + logMessage
-                    + " Exiting.");
-                
-                // Send Vuforia Exception to the application and call initDone
-                // to stop initialization process
-                vuforiaException = new VuforiaException(
-                    VuforiaException.INITIALIZATION_FAILURE,
-                    logMessage);
-                onInitARDone(vuforiaException);
-            }
-        }
-    }
-    
-    public boolean doLoadTrackersData()
-    {
-        // Get the image tracker:
-        TrackerManager trackerManager = TrackerManager.getInstance();
-        ImageTracker imageTracker = (ImageTracker) trackerManager
-            .getTracker(ImageTracker.getClassType());
-        if (imageTracker == null)
-        {
-            Log.d(
-                LOGTAG,
-                "Failed to load tracking data set because the ImageTracker has not been initialized.");
-            return false;
-        }
-        
-        // Create the data set:
-        dataSetUserDef = imageTracker.createDataSet();
-        if (dataSetUserDef == null)
-        {
-            Log.d(LOGTAG, "Failed to create a new tracking data.");
-            return false;
-        }
-        
-        if (!imageTracker.activateDataSet(dataSetUserDef))
-        {
-            Log.d(LOGTAG, "Failed to activate data set.");
-            return false;
-        }
-        
-        Log.d(LOGTAG, "Successfully loaded and activated data set.");
-        return true;
-    }
-    
-    // An async task to load the tracker data asynchronously.
-    private class LoadTrackerTask extends AsyncTask<Void, Integer, Boolean>
-    {
-        protected Boolean doInBackground(Void... params)
-        {
-            // Prevent the onDestroy() method to overlap:
-            synchronized (mShutdownLock)
-            {
-                // Load the tracker data set:
-                return doLoadTrackersData();
-            }
-        }
-        
-        
-        protected void onPostExecute(Boolean result)
-        {
-            
-            VuforiaException vuforiaException = null;
-            
-            Log.d(LOGTAG, "LoadTrackerTask.onPostExecute: execution "
-                + (result ? "successful" : "failed"));
-            
-            if (!result)
-            {
-                String logMessage = "Failed to load tracker data.";
-                // Error loading dataset
-                Log.e(LOGTAG, logMessage);
-                vuforiaException = new VuforiaException(
-                    VuforiaException.LOADING_TRACKERS_FAILURE,
-                    logMessage);
-            } else
-            {
-                // Hint to the virtual machine that it would be a good time to
-                // run the garbage collector:
-                //
-                // NOTE: This is only a hint. There is no guarantee that the
-                // garbage collector will actually be run.
-                System.gc();
-                
-                Vuforia.registerCallback(AndroidVuforiaSession.this);
-                
-                m_started = true;
-            }
-            
-            // Done loading the tracker, update application status, send the
-            // exception to check errors
             onInitARDone(vuforiaException);
+          }
+
         }
-    }
-    
-    // Stores the orientation depending on the current resources configuration
-    private void updateActivityOrientation()
-    {
-        Configuration config = m_activity.getResources().getConfiguration();
-        
-        switch (config.orientation)
+        else
         {
-            case Configuration.ORIENTATION_PORTRAIT:
-                mIsPortrait = true;
-                break;
-            case Configuration.ORIENTATION_LANDSCAPE:
-                mIsPortrait = false;
-                break;
-            case Configuration.ORIENTATION_UNDEFINED:
-            default:
-                break;
+          vuforiaException = new VuforiaException(VuforiaException.TRACKERS_INITIALIZATION_FAILURE, "Failed to initialize trackers");
+          onInitARDone(vuforiaException);
         }
-        
-        Log.i(LOGTAG, "Activity is in "
-            + (mIsPortrait ? "PORTRAIT" : "LANDSCAPE"));
-    }
-    
-    
-    // Method for setting / updating the projection matrix for AR content
-    // rendering
-    private void setProjectionMatrix()
-    {
-        CameraCalibration camCal = CameraDevice.getInstance().getCameraCalibration();
-        mProjectionMatrix = Tool.getProjectionGL(camCal, 10f, 10000f);
-    }
-    
-    
-    private void stopCamera()
-    {
-        doStopTrackers();
-        CameraDevice.getInstance().stop();
-        CameraDevice.getInstance().deinit();
-    }
-    
-    
-    // Applies auto focus if supported by the current device
-    private boolean setFocusMode(int mode) throws VuforiaException
-    {
-        boolean result = CameraDevice.getInstance().setFocusMode(mode);
-        
-        if (!result)
-            throw new VuforiaException(
-                VuforiaException.SET_FOCUS_MODE_FAILURE,
-                "Failed to set focus mode: " + mode);
-        
-        return result;
-    }
-    
-    
-    // Configures the video mode and sets offsets for the camera's image
-    private synchronized void configureVideoBackground()
-    {
-        CameraDevice cameraDevice = CameraDevice.getInstance();
-        VideoMode vm = cameraDevice.getVideoMode(CameraDevice.MODE.MODE_DEFAULT);
-        
-        VideoBackgroundConfig config = new VideoBackgroundConfig();
-        config.setEnabled(true);
-        config.setSynchronous(true);
-        config.setPosition(new Vec2I(0, 0));
-        
-        int xSize = 0, ySize = 0;
-        int mScreenHeight = Gdx.graphics.getHeight();
-        int mScreenWidth = Gdx.graphics.getWidth();
-        
-		if (mIsPortrait)
+      }
+      else
+      {
+        String logMessage;
+
+        // NOTE: Check if initialization failed because the device is
+        // not supported. At this point the user should be informed
+        // with a message.
+        if (mProgressValue == Vuforia.INIT_DEVICE_NOT_SUPPORTED)
         {
-            xSize = (int) (vm.getHeight() * (mScreenHeight / (float) vm
-                .getWidth()));
-            ySize = mScreenHeight;
-            
-            if (xSize < mScreenWidth)
-            {
-                xSize = mScreenWidth;
-                ySize = (int) (mScreenWidth * (vm.getWidth() / (float) vm
-                    .getHeight()));
-            }
-        } else
-        {
-            xSize = mScreenWidth;
-            ySize = (int) (vm.getHeight() * (mScreenWidth / (float) vm
-                .getWidth()));
-            
-            if (ySize < mScreenHeight)
-            {
-                xSize = (int) (mScreenHeight * (vm.getWidth() / (float) vm
-                    .getHeight()));
-                ySize = mScreenHeight;
-            }
+          logMessage = "Failed to initialize Vuforia because this " + "device is not supported.";
         }
-        
-        config.setSize(new Vec2I(xSize, ySize));
-//        config.setSize(new Vec2I(mScreenWidth, mScreenHeight));
-        
-        Log.i(LOGTAG, "Configure Video Background : Video (" + vm.getWidth()
-            + " , " + vm.getHeight() + "), Screen (" + mScreenWidth + " , "
-            + mScreenHeight + "), mSize (" + xSize + " , " + ySize + ")");
-        
-        Renderer.getInstance().setVideoBackgroundConfig(config);
-        
+        else
+        {
+          logMessage = "Failed to initialize Vuforia.";
+        }
+
+        // Log error:
+        Log.e(LOGTAG, "InitVuforiaTask.onPostExecute: " + logMessage + " Exiting.");
+
+        // Send Vuforia Exception to the application and call initDone
+        // to stop initialization process
+        vuforiaException = new VuforiaException(VuforiaException.INITIALIZATION_FAILURE, logMessage);
+        onInitARDone(vuforiaException);
+      }
     }
-    
-    // Returns true if Vuforia is initialized, the trackers started and the
-    // tracker data loaded
-    private boolean isARRunning()
+  }
+
+  public boolean doLoadTrackersData()
+  {
+    // Get the image tracker:
+    TrackerManager trackerManager = TrackerManager.getInstance();
+    ImageTracker imageTracker = (ImageTracker) trackerManager.getTracker(ImageTracker.getClassType());
+    if (imageTracker == null)
     {
-        return m_started;
+      Log.d(LOGTAG, "Failed to load tracking data set because the ImageTracker has not been initialized.");
+      return false;
     }
 
-	@Override
-	public VuforiaState beginRendering() {
-		State state = Renderer.getInstance().begin();
-		
-		return new AndroidVuforiaState(state);
-	}
+    // Create the data set:
+    dataSetUserDef = imageTracker.createDataSet();
+    if (dataSetUserDef == null)
+    {
+      Log.d(LOGTAG, "Failed to create a new tracking data.");
+      return false;
+    }
 
-	@Override
-	public boolean drawVideoBackground() {
-		return Renderer.getInstance().drawVideoBackground();
-	}
+    if (!imageTracker.activateDataSet(dataSetUserDef))
+    {
+      Log.d(LOGTAG, "Failed to activate data set.");
+      return false;
+    }
 
-	@Override
-	public void endRendering() {
-		Renderer.getInstance().end();
-	}
+    Log.d(LOGTAG, "Successfully loaded and activated data set.");
+    return true;
+  }
 
-	@Override
-	public boolean isInited() {
-		return Vuforia.isInitialized();
-	}
+  // An async task to load the tracker data asynchronously.
+  private class LoadTrackerTask extends AsyncTask<Void, Integer, Boolean>
+  {
+    protected Boolean doInBackground(Void... params)
+    {
+      // Prevent the onDestroy() method to overlap:
+      synchronized (mShutdownLock)
+      {
+        // Load the tracker data set:
+        return doLoadTrackersData();
+      }
+    }
 
-	@Override
-	public void onResize(int width, int height) {
-		Log.d(LOGTAG, "onResize");
-		Vuforia.onSurfaceChanged(width, height);
-		onConfigurationChanged();
-	}
+    protected void onPostExecute(Boolean result)
+    {
 
-	@Override
-	public void stop() {
-        try
-        {
-            stopAR();
-        } catch (VuforiaException e)
-        {
-            Log.e(LOGTAG, e.getString());
-        }
-	}
+      VuforiaException vuforiaException = null;
 
-	@Override
-	public VuforiaImageTargetBuilder getTargetBuilder() {
-		return new AndroidVuforiaImageTargetBuilder();
-	}
+      Log.d(LOGTAG, "LoadTrackerTask.onPostExecute: execution " + (result ? "successful" : "failed"));
 
+      if (!result)
+      {
+        String logMessage = "Failed to load tracker data.";
+        // Error loading dataset
+        Log.e(LOGTAG, logMessage);
+        vuforiaException = new VuforiaException(VuforiaException.LOADING_TRACKERS_FAILURE, logMessage);
+      }
+      else
+      {
+        // Hint to the virtual machine that it would be a good time to
+        // run the garbage collector:
+        //
+        // NOTE: This is only a hint. There is no guarantee that the
+        // garbage collector will actually be run.
+        System.gc();
 
-	@Override
-	public void setListener(VuforiaListener listener) {
-		this.listener = listener;
-		
-	}
+        Vuforia.registerCallback(AndroidVuforiaSession.this);
 
+        m_started = true;
+      }
 
-	@Override
-	public void createTrackable(VuforiaTrackableSource source) {
-		TrackerManager trackerManager = TrackerManager.getInstance();
-        ImageTracker imageTracker = (ImageTracker) (trackerManager.getTracker(ImageTracker.getClassType()));
-        if (imageTracker != null)
-        {
-	        imageTracker.deactivateDataSet(dataSetUserDef);
-	        
-            // Clear the oldest target if the dataset is full or the dataset
-            // already contains five user-defined targets.
-            if (dataSetUserDef.hasReachedTrackableLimit()
-                || dataSetUserDef.getNumTrackables() >= 5)
-                dataSetUserDef.destroy(dataSetUserDef.getTrackable(0));
-            
-            if (isExtendedTracking() && dataSetUserDef.getNumTrackables() > 0)
-            {
-                // We need to stop the extended tracking for the previous target
-                // so we can enable it for the new one
-                int previousCreatedTrackableIndex = 
-                    dataSetUserDef.getNumTrackables() - 1;
-                
-                dataSetUserDef.getTrackable(previousCreatedTrackableIndex)
-                    .stopExtendedTracking();
-            }
+      // Done loading the tracker, update application status, send the
+      // exception to check errors
+      onInitARDone(vuforiaException);
+    }
+  }
 
-            Trackable trackable = dataSetUserDef.createTrackable(((AndroidVuforiaTrackableSource)source).getTrackableSource());
-            
-            // Reactivate current dataset
-            imageTracker.activateDataSet(dataSetUserDef);
-            
-            if (isExtendedTracking())
-            {
-                trackable.startExtendedTracking();
-            }
-        }
-	}
+  // Stores the orientation depending on the current resources configuration
+  private void updateActivityOrientation()
+  {
+    Configuration config = m_activity.getResources().getConfiguration();
 
-	@Override
-	public double getFieldOfView()
-	{
-	    CameraCalibration  cameraCalibration = CameraDevice.getInstance().getCameraCalibration();
+    switch (config.orientation)
+    {
+      case Configuration.ORIENTATION_PORTRAIT:
+        mIsPortrait = true;
+        break;
+      case Configuration.ORIENTATION_LANDSCAPE:
+        mIsPortrait = false;
+        break;
+      case Configuration.ORIENTATION_UNDEFINED:
+      default:
+        break;
+    }
 
-	    Vec2F size = cameraCalibration.getSize();
-	    Vec2F focalLength = cameraCalibration.getFocalLength();
+    Log.i(LOGTAG, "Activity is in " + (mIsPortrait ? "PORTRAIT" : "LANDSCAPE"));
+  }
 
-	    
-		double fovRadians = 2 * Math.atan(0.5f * size.getData()[1] / focalLength.getData()[1]);
-		double fovDegrees = fovRadians * 180.0f / Math.PI;
-		return fovDegrees;
-	}
+  // Method for setting / updating the projection matrix for AR content
+  // rendering
+  private void setProjectionMatrix()
+  {
+    CameraCalibration camCal = CameraDevice.getInstance().getCameraCalibration();
+    mProjectionMatrix = Tool.getProjectionGL(camCal, 10f, 10000f);
+  }
 
-	@Override
-	public boolean isExtendedTracking() {
-		return extendedTracking;
-	}
+  private void stopCamera()
+  {
+    doStopTrackers();
+    CameraDevice.getInstance().stop();
+    CameraDevice.getInstance().deinit();
+  }
 
+  // Applies auto focus if supported by the current device
+  private boolean setFocusMode(int mode) throws VuforiaException
+  {
+    boolean result = CameraDevice.getInstance().setFocusMode(mode);
 
-	@Override
-	public void setExtendedTracking(boolean extendedTracking) {
-		this.extendedTracking = extendedTracking;
-	}
+    if (!result) throw new VuforiaException(VuforiaException.SET_FOCUS_MODE_FAILURE, "Failed to set focus mode: " + mode);
 
+    return result;
+  }
 
-	@Override
-	public boolean setFlash(boolean on) {
-		return CameraDevice.getInstance().setFlashTorchMode(on);
-	}
-	
-	@Override
-	public boolean doFocus(){
-		return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
-	}
-	
-	@Override
-	public boolean setAutoFocus(boolean on){
-		if (on)
-		{
-			return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
-		}
-		else
-		{
-			return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_NORMAL);
-		}
-	}
+  // Configures the video mode and sets offsets for the camera's image
+  private synchronized void configureVideoBackground()
+  {
+    CameraDevice cameraDevice = CameraDevice.getInstance();
+    VideoMode vm = cameraDevice.getVideoMode(CameraDevice.MODE.MODE_DEFAULT);
 
-	@Override
-	public boolean hasAutoFocus() {
-		return hasAutoFocus;
-	}
+    VideoBackgroundConfig config = new VideoBackgroundConfig();
+    config.setEnabled(true);
+    config.setSynchronous(true);
+    config.setPosition(new Vec2I(0, 0));
 
+    int xSize = 0, ySize = 0;
+    int mScreenHeight = Gdx.graphics.getHeight();
+    int mScreenWidth = Gdx.graphics.getWidth();
 
-	public void setHasAutoFocus(boolean hasAutoFocus) {
-		this.hasAutoFocus = hasAutoFocus;
-	}
+    if (mIsPortrait)
+    {
+      xSize = (int) (vm.getHeight() * (mScreenHeight / (float) vm.getWidth()));
+      ySize = mScreenHeight;
 
-	@Override
-	public boolean hasFlash() {
-		return hasFlash;
-	}
+      if (xSize < mScreenWidth)
+      {
+        xSize = mScreenWidth;
+        ySize = (int) (mScreenWidth * (vm.getWidth() / (float) vm.getHeight()));
+      }
+    }
+    else
+    {
+      xSize = mScreenWidth;
+      ySize = (int) (vm.getHeight() * (mScreenWidth / (float) vm.getWidth()));
 
+      if (ySize < mScreenHeight)
+      {
+        xSize = (int) (mScreenHeight * (vm.getWidth() / (float) vm.getHeight()));
+        ySize = mScreenHeight;
+      }
+    }
 
-	public void setHasFlash(boolean hasFlash) {
-		this.hasFlash = hasFlash;
-	}
+    // config.setSize(new Vec2I(xSize, ySize));
+    config.setSize(new Vec2I(mScreenWidth, mScreenHeight));
+
+    Log.i(LOGTAG, "Configure Video Background : Video (" + vm.getWidth() + " , " + vm.getHeight() + "), Screen (" + mScreenWidth + " , " + mScreenHeight
+        + "), mSize (" + xSize + " , " + ySize + ")");
+
+    Renderer.getInstance().setVideoBackgroundConfig(config);
+
+  }
+
+  // Returns true if Vuforia is initialized, the trackers started and the
+  // tracker data loaded
+  private boolean isARRunning()
+  {
+    return m_started;
+  }
+
+  @Override
+  public VuforiaState beginRendering()
+  {
+    State state = Renderer.getInstance().begin();
+
+    return new AndroidVuforiaState(state);
+  }
+
+  @Override
+  public boolean drawVideoBackground()
+  {
+    return Renderer.getInstance().drawVideoBackground();
+  }
+
+  @Override
+  public void endRendering()
+  {
+    Renderer.getInstance().end();
+  }
+
+  @Override
+  public boolean isInited()
+  {
+    return Vuforia.isInitialized();
+  }
+
+  @Override
+  public void onResize(int width, int height)
+  {
+    Log.d(LOGTAG, "onResize");
+    Vuforia.onSurfaceChanged(width, height);
+    onConfigurationChanged();
+  }
+
+  @Override
+  public void stop()
+  {
+    try
+    {
+      stopAR();
+    }
+    catch (VuforiaException e)
+    {
+      Log.e(LOGTAG, e.getString());
+    }
+  }
+
+  @Override
+  public VuforiaImageTargetBuilder getTargetBuilder()
+  {
+    return new AndroidVuforiaImageTargetBuilder();
+  }
+
+  @Override
+  public void setListener(VuforiaListener listener)
+  {
+    this.listener = listener;
+
+  }
+
+  @Override
+  public void createTrackable(VuforiaTrackableSource source)
+  {
+    TrackerManager trackerManager = TrackerManager.getInstance();
+    ImageTracker imageTracker = (ImageTracker) (trackerManager.getTracker(ImageTracker.getClassType()));
+    if (imageTracker != null)
+    {
+      imageTracker.deactivateDataSet(dataSetUserDef);
+
+      // Clear the oldest target if the dataset is full or the dataset
+      // already contains five user-defined targets.
+      if (dataSetUserDef.hasReachedTrackableLimit() || dataSetUserDef.getNumTrackables() >= 5) dataSetUserDef.destroy(dataSetUserDef.getTrackable(0));
+
+      if (isExtendedTracking() && dataSetUserDef.getNumTrackables() > 0)
+      {
+        // We need to stop the extended tracking for the previous target
+        // so we can enable it for the new one
+        int previousCreatedTrackableIndex = dataSetUserDef.getNumTrackables() - 1;
+
+        dataSetUserDef.getTrackable(previousCreatedTrackableIndex).stopExtendedTracking();
+      }
+
+      Trackable trackable = dataSetUserDef.createTrackable(((AndroidVuforiaTrackableSource) source).getTrackableSource());
+
+      // Reactivate current dataset
+      imageTracker.activateDataSet(dataSetUserDef);
+
+      if (isExtendedTracking())
+      {
+        trackable.startExtendedTracking();
+      }
+    }
+  }
+
+  @Override
+  public double getFieldOfView()
+  {
+    CameraCalibration cameraCalibration = CameraDevice.getInstance().getCameraCalibration();
+
+    Vec2F size = cameraCalibration.getSize();
+    Vec2F focalLength = cameraCalibration.getFocalLength();
+
+    double fovRadians = 2 * Math.atan(0.5f * size.getData()[1] / focalLength.getData()[1]);
+    double fovDegrees = fovRadians * 180.0f / Math.PI;
+    return fovDegrees;
+  }
+
+  @Override
+  public boolean isExtendedTracking()
+  {
+    return extendedTracking;
+  }
+
+  @Override
+  public void setExtendedTracking(boolean extendedTracking)
+  {
+    this.extendedTracking = extendedTracking;
+  }
+
+  @Override
+  public boolean setFlash(boolean on)
+  {
+    return CameraDevice.getInstance().setFlashTorchMode(on);
+  }
+
+  @Override
+  public boolean doFocus()
+  {
+    return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
+  }
+
+  @Override
+  public boolean setAutoFocus(boolean on)
+  {
+    if (on)
+    {
+      return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
+    }
+    else
+    {
+      return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_NORMAL);
+    }
+  }
+
+  @Override
+  public boolean hasAutoFocus()
+  {
+    return hasAutoFocus;
+  }
+
+  public void setHasAutoFocus(boolean hasAutoFocus)
+  {
+    this.hasAutoFocus = hasAutoFocus;
+  }
+
+  @Override
+  public boolean hasFlash()
+  {
+    return hasFlash;
+  }
+
+  public void setHasFlash(boolean hasFlash)
+  {
+    this.hasFlash = hasFlash;
+  }
+
+  @Override
+  public void clearAllTrackables()
+  {
+    TrackerManager trackerManager = TrackerManager.getInstance();
+    ImageTracker imageTracker = (ImageTracker) (trackerManager.getTracker(ImageTracker.getClassType()));
+    if (imageTracker != null)
+    {
+      imageTracker.deactivateDataSet(dataSetUserDef);
+      for (int i = 0; i < dataSetUserDef.getNumTrackables(); i++)
+      {
+        dataSetUserDef.destroy(dataSetUserDef.getTrackable(i));
+      }
+      imageTracker.activateDataSet(dataSetUserDef);
+    }
+  }
 }
