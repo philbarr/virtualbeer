@@ -9,7 +9,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 public class MenuStage extends Stage {
-	enum Action{
+	private static final String BUTTON_CAMERA_LARGE = "camera_large";
+  private static final String BUTTON_CAMERA_SMALL = "camera_small";
+
+  enum Action{
 		FLASH,
 		CAMERA,
 		MENU,
@@ -27,7 +30,7 @@ public class MenuStage extends Stage {
 					((Button)event.getListenerActor()).setChecked(listener.flashButtonClicked());
 					break;
 				case CAMERA:
-					((Button)event.getListenerActor()).setChecked(listener.cameraButtonClicked());
+					listener.cameraButtonClicked();
 					break;
 				case MENU:
 //					((Button)event.getListenerActor()).
@@ -50,8 +53,8 @@ public class MenuStage extends Stage {
 		super(width, height, keepAspect);
 		this.listener = listener;
 		
-		float panelHeight = Gdx.graphics.getHeight()/6;
-		float panelWidth = Gdx.graphics.getWidth();
+		float panelHeight = (height - this.getGutterHeight() * 2)/6;
+		float panelWidth = width - this.getGutterWidth() * 2;
 		float panelPadding = panelHeight / 25;
 		float buttonMargin = panelWidth / 25;
 		float buttonWidth = (panelWidth - buttonMargin * 4 - panelPadding * 2) / 3 ;
@@ -60,13 +63,13 @@ public class MenuStage extends Stage {
 		tableCameraSmall = createTable(panelWidth, panelHeight);
 		tableCameraSmall.addActor(createButton(Action.FLASH, "flash"
 				, panelPadding + buttonMargin * 1 + buttonWidth * 0, panelPadding + buttonMargin, buttonWidth, buttonHeight));
-		tableCameraSmall.addActor(createButton(Action.CAMERA, "camera_small"
+		tableCameraSmall.addActor(createButton(Action.CAMERA, BUTTON_CAMERA_SMALL
 				, panelPadding + buttonMargin * 2 + buttonWidth * 1, panelPadding + buttonMargin, buttonWidth, buttonHeight));
 		tableCameraSmall.addActor(createButton(Action.MENU, "menu"
 				, panelPadding + buttonMargin * 3 + buttonWidth * 2, panelPadding + buttonMargin, buttonWidth, buttonHeight));
 		
 		tableCameraLarge = createTable(panelWidth, panelHeight);
-		tableCameraLarge.addActor(createButton(Action.CAMERA, "camera_large"
+		tableCameraLarge.addActor(createButton(Action.CAMERA, BUTTON_CAMERA_LARGE
 				, panelPadding + buttonMargin * 1 + buttonWidth * 0, panelPadding + buttonMargin, buttonWidth * 2 + buttonMargin, buttonHeight));
 		tableCameraLarge.addActor(createButton(Action.MENU, "menu"
 				, panelPadding + buttonMargin * 3 + buttonWidth * 2, panelPadding + buttonMargin, buttonWidth, buttonHeight));
@@ -88,6 +91,7 @@ public class MenuStage extends Stage {
 		button.addListener(new MenuButtonListener(action));
 		button.setPosition(x, y);
 		button.setSize(width, height);
+		button.setName(style);
 		return button;
 	}
 
@@ -100,5 +104,10 @@ public class MenuStage extends Stage {
 		this.tableCameraSmall.setVisible(hasFlash);
 		this.tableCameraLarge.setVisible(!hasFlash);
 		super.draw();
+	}
+	
+	public void setIsTrackingTarget(boolean isTracking){
+	  ((Button)tableCameraSmall.findActor(BUTTON_CAMERA_SMALL)).setChecked(isTracking);
+	  ((Button)tableCameraLarge.findActor(BUTTON_CAMERA_LARGE)).setChecked(isTracking);
 	}
 }

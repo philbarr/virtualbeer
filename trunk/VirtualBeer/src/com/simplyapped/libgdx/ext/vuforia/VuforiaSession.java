@@ -32,5 +32,6 @@ public interface VuforiaSession {
 	boolean hasAutoFocus();
 	boolean hasFlash();
 	boolean doFocus();
+  void clearAllTrackables();
 	
 }
