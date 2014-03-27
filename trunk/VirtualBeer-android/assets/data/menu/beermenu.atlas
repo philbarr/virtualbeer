@@ -5,49 +5,49 @@ filter: Nearest,Nearest
 repeat: none
 btn_camera_large_off
   rotate: false
-  xy: 364, 846
+  xy: 364, 638
   size: 438, 167
   orig: 438, 167
   offset: 0, 0
   index: -1
 btn_camera_large_on
   rotate: false
-  xy: 364, 677
+  xy: 364, 469
   size: 438, 167
   orig: 438, 167
   offset: 0, 0
   index: -1
 btn_camera_small_off
   rotate: false
-  xy: 804, 846
+  xy: 2, 2
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
 btn_camera_small_on
   rotate: false
-  xy: 2, 2
+  xy: 215, 2
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
 btn_flash_off
   rotate: false
-  xy: 364, 508
+  xy: 428, 2
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
 btn_flash_on
   rotate: false
-  xy: 804, 677
+  xy: 804, 638
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
 btn_menu
   rotate: false
-  xy: 215, 2
+  xy: 804, 469
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
@@ -57,6 +57,34 @@ buttonpanel
   xy: 2, 171
   size: 720, 200
   orig: 720, 200
+  offset: 0, 0
+  index: -1
+lightstripgreen
+  rotate: false
+  xy: 364, 963
+  size: 600, 50
+  orig: 600, 50
+  offset: 0, 0
+  index: -1
+lightstripoff
+  rotate: false
+  xy: 364, 911
+  size: 600, 50
+  orig: 600, 50
+  offset: 0, 0
+  index: -1
+lightstripred
+  rotate: false
+  xy: 364, 859
+  size: 600, 50
+  orig: 600, 50
+  offset: 0, 0
+  index: -1
+lightstripyellow
+  rotate: false
+  xy: 364, 807
+  size: 600, 50
+  orig: 600, 50
   offset: 0, 0
   index: -1
 viewfinder
