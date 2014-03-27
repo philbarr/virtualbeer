@@ -8,7 +8,6 @@ package com.simplyapped.libgdx.ext.vuforia;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.util.Log;
 import android.view.WindowManager;
 import com.badlogic.gdx.Gdx;
@@ -327,15 +326,6 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     if (imageTracker != null) imageTracker.stop();
 
     return result;
-  }
-
-  // Resumes Vuforia, restarts the trackers and the camera
-  public void resumeAR() throws VuforiaException
-  {
-    // Vuforia-specific resume operation
-    Vuforia.onResume();
-
-    if (m_started) startAR(mCamera);
   }
 
   // Pauses Vuforia and stops the camera
