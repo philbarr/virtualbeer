@@ -3,7 +3,7 @@
    ROBOCOPY     ::     Robust File Copy for Windows                              
 -------------------------------------------------------------------------------
 
-  Started : Fri Mar 21 18:57:06 2014
+  Started : Tue Mar 25 21:07:37 2014
 
    Source : C:\Development\Java\Eclipse\Kepler\VirtualBeer\resources\images\menu\atlas\
      Dest : C:\Development\Java\Eclipse\Kepler\VirtualBeer-android\assets\data\menu\
@@ -18,15 +18,19 @@
 	  *EXTRA File 		     573	beermenu.json
 	  *EXTRA File 		   11662	liberation32.fnt
 	  *EXTRA File 		   15522	liberation32.png
-	    Newer     		    1027	beermenu.atlas  0%  100%  
-	    Newer     		  122315	beermenu.png  0%  100%  
+	    Newer     		    1446	beermenu.atlas  0%  100%  
+	    Newer     		  382031	beermenu.png  0%   34%   68%  100%  
 
 ------------------------------------------------------------------------------
 
                Total    Copied   Skipped  Mismatch    FAILED    Extras
     Dirs :         1         0         1         0         0         0
    Files :         2         2         0         0         0         3
-   Bytes :   120.4 k   120.4 k         0         0         0    27.1 k
+   Bytes :   374.4 k   374.4 k         0         0         0    27.1 k
    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
 
-   Ended : Fri Mar 21 18:57:06 2014
+
+   Speed :            34861545 Bytes/sec.
+   Speed :            1994.793 MegaBytes/min.
+
+   Ended : Tue Mar 25 21:07:37 2014

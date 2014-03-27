@@ -1,15 +1,23 @@
 package com.simplyapped.virtualbeer;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.SnapshotArray;
 
 public class MenuStage extends Stage {
-	private static final String BUTTON_CAMERA_LARGE = "camera_large";
+	private static final String LIGHTSTRIPOFF = "lightstripoff";
+	private static final String LIGHTSTRIPRED = "lightstripred";
+	private static final String LIGHTSTRIPAMBER = "lightstripyellow";
+	private static final String LIGHTSTRIPGREEN = "lightstripgreen";
+  private static final String BUTTON_CAMERA_LARGE = "camera_large";
   private static final String BUTTON_CAMERA_SMALL = "camera_small";
 
   enum Action{
@@ -45,7 +53,8 @@ public class MenuStage extends Stage {
 
 	private Table tableCameraSmall;
 	private Table tableCameraLarge;
-
+	private Group lightGroup;
+	
 	private boolean hasFlash;
 	private MenuStageListener listener;
 
@@ -74,9 +83,46 @@ public class MenuStage extends Stage {
 		tableCameraLarge.addActor(createButton(Action.MENU, "menu"
 				, panelPadding + buttonMargin * 3 + buttonWidth * 2, panelPadding + buttonMargin, buttonWidth, buttonHeight));
 		
+		lightGroup = new Group();
+    createLight(LIGHTSTRIPOFF, panelWidth);
+    createLight(LIGHTSTRIPRED, panelWidth);
+    createLight(LIGHTSTRIPAMBER, panelWidth);
+    createLight(LIGHTSTRIPGREEN, panelWidth);
+    setLight(LIGHTSTRIPOFF);
+    lightGroup.setPosition(0 , panelHeight);
+    lightGroup.setSize(panelHeight/2, panelWidth);
+    
 		this.addActor(tableCameraSmall);
 		this.addActor(tableCameraLarge);
+		this.addActor(lightGroup);
 	}
+
+  private void setLight(String lightName)
+  {
+    SnapshotArray<Actor> children = lightGroup.getChildren();
+    Actor[] actors = children.begin();
+    for (int i = 0; i < children.size; i++)
+    {
+      if (actors[i].getName().equals(lightName))
+      {
+        actors[i].setVisible(true);
+      }
+      else
+      {
+        actors[i].setVisible(false);
+      }
+    }
+    children.end();
+  }
+
+  private void createLight(String lightname, float width)
+  {
+    Image light = new Image(skin.getDrawable(lightname));
+		light.setName(lightname);
+		light.setVisible(false);
+		light.setWidth(width);
+		lightGroup.addActor(light);
+  }
 
 	private Table createTable(float width, float height) {
 		Table table = new Table();
