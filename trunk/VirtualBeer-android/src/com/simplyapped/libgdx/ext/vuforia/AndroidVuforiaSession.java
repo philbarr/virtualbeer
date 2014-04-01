@@ -7,6 +7,7 @@ package com.simplyapped.libgdx.ext.vuforia;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.WindowManager;
@@ -28,7 +29,6 @@ import com.qualcomm.vuforia.TrackerManager;
 import com.qualcomm.vuforia.Vec2F;
 import com.qualcomm.vuforia.Vec2I;
 import com.qualcomm.vuforia.VideoBackgroundConfig;
-import com.qualcomm.vuforia.VideoMode;
 import com.qualcomm.vuforia.Vuforia;
 import com.qualcomm.vuforia.Vuforia.UpdateCallbackInterface;
 
@@ -132,7 +132,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
       Log.e(LOGTAG, error);
       throw new VuforiaException(VuforiaException.CAMERA_INITIALIZATION_FAILURE, error);
     }
-
+    //Camera.g
     configureVideoBackground();
 
     if (!CameraDevice.getInstance().selectVideoMode(CameraDevice.MODE.MODE_DEFAULT))
@@ -159,7 +159,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     {
       imageTracker.start();
     }
-
+    m_started=true;
     try
     {
       if (hasAutoFocus)
@@ -328,14 +328,6 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     return result;
   }
 
-  // Pauses Vuforia and stops the camera
-  public void pauseAR() throws VuforiaException
-  {
-    if (m_started) stopCamera();
-
-    Vuforia.onPause();
-  }
-
   // Gets the projection matrix to be used for rendering
   @Override
   public Matrix4 getProjectionMatrix()
@@ -367,24 +359,28 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     {
       // configure video background
       configureVideoBackground();
-
-      // Update projection matrix:
-      setProjectionMatrix();
     }
 
   }
+  
+  public void onCreate()
+  {
+    Vuforia.onSurfaceCreated();
+  }
 
   // Methods to be called to handle lifecycle
+  @Override
   public void onResume()
   {
     // Vuforia-specific resume operation
     Vuforia.onResume();
-
-    if (m_started) 
+    Vuforia.onSurfaceCreated();
+    if (!m_started) 
     {
       try
       {
         startAR(mCamera);
+        m_started=true;
       }
       catch (VuforiaException e)
       {
@@ -395,7 +391,10 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
 
   public void onPause()
   {
-    if (m_started) stopCamera();
+    if (m_started) {
+      stopCamera();
+      m_started = false;
+    }
 
     Vuforia.onPause();
   }
@@ -637,12 +636,14 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   // rendering
   private void setProjectionMatrix()
   {
+    Gdx.app.log(LOGTAG, "setProjectionMatrix");
     CameraCalibration camCal = CameraDevice.getInstance().getCameraCalibration();
     mProjectionMatrix = Tool.getProjectionGL(camCal, 10f, 10000f);
   }
 
   private void stopCamera()
   {
+    Gdx.app.log(LOGTAG, "stopCamera");
     doStopTrackers();
     CameraDevice.getInstance().stop();
     CameraDevice.getInstance().deinit();
@@ -651,7 +652,10 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   // Applies auto focus if supported by the current device
   private boolean setFocusMode(int mode) throws VuforiaException
   {
-    boolean result = CameraDevice.getInstance().setFocusMode(mode);
+    Gdx.app.log(LOGTAG, "setFocusMode: " + mode);
+    CameraDevice instance = CameraDevice.getInstance();
+    
+    boolean result = instance.setFocusMode(mode);
 
     if (!result) throw new VuforiaException(VuforiaException.SET_FOCUS_MODE_FAILURE, "Failed to set focus mode: " + mode);
 
@@ -661,6 +665,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   // Configures the video mode and sets offsets for the camera's image
   private synchronized void configureVideoBackground()
   {
+    Gdx.app.log(LOGTAG, "configureVideoBackground");
     int mScreenHeight = Gdx.graphics.getHeight();
     int mScreenWidth = Gdx.graphics.getWidth();
 
@@ -735,7 +740,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   @Override
   public boolean isInited()
   {
-    return Vuforia.isInitialized();
+    return isARRunning();
   }
 
   @Override
@@ -743,12 +748,13 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   {
     Log.d(LOGTAG, "onResize");
     Vuforia.onSurfaceChanged(width, height);
-    onConfigurationChanged();
+//    onConfigurationChanged();
   }
 
   @Override
   public void stop()
   {
+    Gdx.app.log(LOGTAG, "stop");
     try
     {
       stopAR();
@@ -775,6 +781,7 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   @Override
   public void createTrackable(VuforiaTrackableSource source)
   {
+    Gdx.app.log(LOGTAG, "createTrackable");
     TrackerManager trackerManager = TrackerManager.getInstance();
     ImageTracker imageTracker = (ImageTracker) (trackerManager.getTracker(ImageTracker.getClassType()));
     if (imageTracker != null)
@@ -835,12 +842,6 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   public boolean setFlash(boolean on)
   {
     return CameraDevice.getInstance().setFlashTorchMode(on);
-  }
-
-  @Override
-  public boolean doFocus()
-  {
-    return CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
   }
 
   @Override
