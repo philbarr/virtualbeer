@@ -166,5 +166,6 @@ public class MenuStage extends Stage {
 	public void setIsTrackingTarget(boolean isTracking){
 	  ((Button)tableCameraSmall.findActor(BUTTON_CAMERA_SMALL)).setChecked(isTracking);
 	  ((Button)tableCameraLarge.findActor(BUTTON_CAMERA_LARGE)).setChecked(isTracking);
+	  lightGroup.setVisible(!isTracking);
 	}
 }
