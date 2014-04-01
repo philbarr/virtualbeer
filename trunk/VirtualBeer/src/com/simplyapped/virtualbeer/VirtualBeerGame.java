@@ -52,7 +52,6 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   private int fieldOfView = 90;
   private Model beerModel;
   private boolean animComplete;
-  private boolean isAutoFocusing;
 
   @Override
   public void create()
@@ -103,6 +102,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 
       VuforiaState state = vuforia.beginRendering();
       vuforia.drawVideoBackground();
+      
       renderables = state.getNumTrackableResults();
 
       Matrix4 vuforiaProjection = vuforia.getProjectionMatrix();
@@ -151,6 +151,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
       }
 
       vuforia.endRendering();
+
       if (stage != null)
       {
         stage.setHasFlash(vuforia.hasFlash());
@@ -272,7 +273,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
       vuforia.setNumTrackablesHint(5);
       if (vuforia.hasAutoFocus())
       {
-        isAutoFocusing = vuforia.setAutoFocus(true);
+        vuforia.setAutoFocus(true);
       }
     }
   }
@@ -316,17 +317,5 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   {
     isTrackingTarget = isTracking;
     stage.setIsTrackingTarget(isTracking);
-  }
-
-  @Override
-  public void doFocus()
-  {
-    if (!isAutoFocusing)
-    {
-      if (!vuforia.doFocus())
-      {
-        dialog.showShortToast("Failed to focus");
-      }
-    }
   }
 }

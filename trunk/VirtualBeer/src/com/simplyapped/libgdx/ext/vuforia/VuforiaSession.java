@@ -31,7 +31,6 @@ public interface VuforiaSession {
 	boolean setNumTrackablesHint(int numTrackables);
 	boolean hasAutoFocus();
 	boolean hasFlash();
-	boolean doFocus();
   void clearAllTrackables();
 	
 }

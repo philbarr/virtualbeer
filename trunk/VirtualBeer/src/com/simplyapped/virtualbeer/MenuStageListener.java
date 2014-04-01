@@ -11,5 +11,4 @@ public interface MenuStageListener {
 	 */
 	void cameraButtonClicked();
 	
-	void doFocus();
 }
