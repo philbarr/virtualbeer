@@ -59,28 +59,28 @@ buttonpanel
   orig: 720, 200
   offset: 0, 0
   index: -1
-lightstripgreen
+lightstripamber
   rotate: false
   xy: 364, 963
   size: 600, 50
   orig: 600, 50
   offset: 0, 0
   index: -1
-lightstripoff
+lightstripgreen
   rotate: false
   xy: 364, 911
   size: 600, 50
   orig: 600, 50
   offset: 0, 0
   index: -1
-lightstripred
+lightstripoff
   rotate: false
   xy: 364, 859
   size: 600, 50
   orig: 600, 50
   offset: 0, 0
   index: -1
-lightstripyellow
+lightstripred
   rotate: false
   xy: 364, 807
   size: 600, 50

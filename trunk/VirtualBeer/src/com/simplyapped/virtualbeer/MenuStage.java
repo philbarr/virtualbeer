@@ -13,10 +13,11 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.SnapshotArray;
 
 public class MenuStage extends Stage {
-	private static final String LIGHTSTRIPOFF = "lightstripoff";
-	private static final String LIGHTSTRIPRED = "lightstripred";
-	private static final String LIGHTSTRIPAMBER = "lightstripyellow";
-	private static final String LIGHTSTRIPGREEN = "lightstripgreen";
+	private static final String BUTTONPANEL = "buttonpanel";
+  public static final String LIGHTSTRIPOFF = "lightstripoff";
+	public static final String LIGHTSTRIPRED = "lightstripred";
+	public static final String LIGHTSTRIPAMBER = "lightstripamber";
+	public static final String LIGHTSTRIPGREEN = "lightstripgreen";
   private static final String BUTTON_CAMERA_LARGE = "camera_large";
   private static final String BUTTON_CAMERA_SMALL = "camera_small";
 
@@ -26,6 +27,7 @@ public class MenuStage extends Stage {
 		MENU,
 		DIRECTIONS
 	}
+  
 	class MenuButtonListener extends ClickListener {
 		private Action action;
 		public MenuButtonListener(Action action) {
@@ -68,7 +70,18 @@ public class MenuStage extends Stage {
 		float buttonMargin = panelWidth / 25;
 		float buttonWidth = (panelWidth - buttonMargin * 4 - panelPadding * 2) / 3 ;
 		float buttonHeight = panelHeight / 1 - buttonMargin * 2 - panelPadding * 2;
+
+		// light group
+		float lightGroupWidth = buttonWidth * 3 + buttonMargin * 2;
+		lightGroup = new Group();
+		lightGroup.setPosition(panelPadding + buttonMargin , panelHeight);
+		float lightGroupHeight = createLight(LIGHTSTRIPOFF, lightGroupWidth);
+		createLight(LIGHTSTRIPRED, lightGroupWidth);
+		createLight(LIGHTSTRIPAMBER, lightGroupWidth);
+		createLight(LIGHTSTRIPGREEN, lightGroupWidth);
+		lightGroup.setSize(panelWidth, lightGroupHeight);
 		
+		// table with a small camera button
 		tableCameraSmall = createTable(panelWidth, panelHeight);
 		tableCameraSmall.addActor(createButton(Action.FLASH, "flash"
 				, panelPadding + buttonMargin * 1 + buttonWidth * 0, panelPadding + buttonMargin, buttonWidth, buttonHeight));
@@ -76,58 +89,56 @@ public class MenuStage extends Stage {
 				, panelPadding + buttonMargin * 2 + buttonWidth * 1, panelPadding + buttonMargin, buttonWidth, buttonHeight));
 		tableCameraSmall.addActor(createButton(Action.MENU, "menu"
 				, panelPadding + buttonMargin * 3 + buttonWidth * 2, panelPadding + buttonMargin, buttonWidth, buttonHeight));
-		
+
+    // table with a large camera button
 		tableCameraLarge = createTable(panelWidth, panelHeight);
 		tableCameraLarge.addActor(createButton(Action.CAMERA, BUTTON_CAMERA_LARGE
 				, panelPadding + buttonMargin * 1 + buttonWidth * 0, panelPadding + buttonMargin, buttonWidth * 2 + buttonMargin, buttonHeight));
 		tableCameraLarge.addActor(createButton(Action.MENU, "menu"
 				, panelPadding + buttonMargin * 3 + buttonWidth * 2, panelPadding + buttonMargin, buttonWidth, buttonHeight));
-		
-		lightGroup = new Group();
-    createLight(LIGHTSTRIPOFF, panelWidth);
-    createLight(LIGHTSTRIPRED, panelWidth);
-    createLight(LIGHTSTRIPAMBER, panelWidth);
-    createLight(LIGHTSTRIPGREEN, panelWidth);
-    setLight(LIGHTSTRIPOFF);
-    lightGroup.setPosition(0 , panelHeight);
-    lightGroup.setSize(panelHeight/2, panelWidth);
     
 		this.addActor(tableCameraSmall);
 		this.addActor(tableCameraLarge);
 		this.addActor(lightGroup);
+
+		setLight(LIGHTSTRIPOFF);
 	}
 
-  private void setLight(String lightName)
+  public void setLight(String lightName)
   {
     SnapshotArray<Actor> children = lightGroup.getChildren();
     Actor[] actors = children.begin();
     for (int i = 0; i < children.size; i++)
     {
-      if (actors[i].getName().equals(lightName))
+      if (actors[i].getName().startsWith("light"))
       {
-        actors[i].setVisible(true);
-      }
-      else
-      {
-        actors[i].setVisible(false);
+        if (actors[i].getName().equals(lightName))
+        {
+          actors[i].setVisible(true);
+        }
+        else
+        {
+          actors[i].setVisible(false);
+        }
       }
     }
     children.end();
   }
 
-  private void createLight(String lightname, float width)
+  private float createLight(String lightname, float width)
   {
     Image light = new Image(skin.getDrawable(lightname));
 		light.setName(lightname);
 		light.setVisible(false);
 		light.setWidth(width);
 		lightGroup.addActor(light);
+		return light.getHeight();
   }
 
 	private Table createTable(float width, float height) {
 		Table table = new Table();
 		table.setPosition(0, 0);
-		table.setBackground(skin.getDrawable("buttonpanel"));
+		table.setBackground(skin.getDrawable(BUTTONPANEL));
 		table.setSize(width, height);
 		return table;
 	}

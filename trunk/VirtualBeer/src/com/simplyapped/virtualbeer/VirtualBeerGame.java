@@ -187,6 +187,10 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 
   public void pause()
   {
+    if (builder != null) {
+      builder.stopScan();
+      isScanning= false;
+    }
     if (vuforia != null) vuforia.onPause();
   }
 
@@ -225,6 +229,27 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
           vuforia.startTrackers();
           isBuilding = false;
         }
+      }
+      try
+      {
+        switch (builder.frameQuality())
+        {
+          case VuforiaImageTargetBuilder.FRAME_QUALITY_LOW:
+            stage.setLight(MenuStage.LIGHTSTRIPRED);
+            break;
+          case VuforiaImageTargetBuilder.FRAME_QUALITY_MEDIUM:
+            stage.setLight(MenuStage.LIGHTSTRIPAMBER);
+            break;
+          case VuforiaImageTargetBuilder.FRAME_QUALITY_HIGH:
+            stage.setLight(MenuStage.LIGHTSTRIPGREEN);
+            break;
+          default:
+            stage.setLight(MenuStage.LIGHTSTRIPOFF);
+        }
+      }
+      catch (Exception e)
+      {
+        Gdx.app.log(VirtualBeerGame.class.toString(), "Setting frame quality error", e);
       }
     }
   }
