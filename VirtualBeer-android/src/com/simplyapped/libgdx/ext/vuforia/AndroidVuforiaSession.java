@@ -380,13 +380,16 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     // Vuforia-specific resume operation
     Vuforia.onResume();
 
-    if (m_started) try
+    if (m_started) 
     {
-      startAR(mCamera);
-    }
-    catch (VuforiaException e)
-    {
-      e.printStackTrace();
+      try
+      {
+        startAR(mCamera);
+      }
+      catch (VuforiaException e)
+      {
+        e.printStackTrace();
+      }
     }
   }
 
@@ -658,17 +661,19 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   // Configures the video mode and sets offsets for the camera's image
   private synchronized void configureVideoBackground()
   {
-    CameraDevice cameraDevice = CameraDevice.getInstance();
-    VideoMode vm = cameraDevice.getVideoMode(CameraDevice.MODE.MODE_DEFAULT);
+    int mScreenHeight = Gdx.graphics.getHeight();
+    int mScreenWidth = Gdx.graphics.getWidth();
 
     VideoBackgroundConfig config = new VideoBackgroundConfig();
     config.setEnabled(true);
     config.setSynchronous(true);
     config.setPosition(new Vec2I(0, 0));
+    /*
+    CameraDevice cameraDevice = CameraDevice.getInstance();
+    VideoMode vm = cameraDevice.getVideoMode(CameraDevice.MODE.MODE_DEFAULT);
+
 
     int xSize = 0, ySize = 0;
-    int mScreenHeight = Gdx.graphics.getHeight();
-    int mScreenWidth = Gdx.graphics.getWidth();
 
     if (mIsPortrait)
     {
@@ -692,22 +697,19 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
         ySize = mScreenHeight;
       }
     }
-
+     */
     // config.setSize(new Vec2I(xSize, ySize));
     config.setSize(new Vec2I(mScreenWidth, mScreenHeight));
 
-    Log.i(LOGTAG, "Configure Video Background : Video (" + vm.getWidth() + " , " + vm.getHeight() + "), Screen (" + mScreenWidth + " , " + mScreenHeight
-        + "), mSize (" + xSize + " , " + ySize + ")");
-
+    Log.i(LOGTAG, "Configure Video Background :  Screen (" + mScreenWidth + " , " + mScreenHeight+ ")");
     Renderer.getInstance().setVideoBackgroundConfig(config);
-
   }
 
   // Returns true if Vuforia is initialized, the trackers started and the
   // tracker data loaded
   private boolean isARRunning()
   {
-    return m_started;
+    return m_started && Vuforia.isInitialized();
   }
 
   @Override
