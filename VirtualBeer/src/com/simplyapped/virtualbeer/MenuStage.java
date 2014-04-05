@@ -1,6 +1,7 @@
 package com.simplyapped.virtualbeer;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -10,17 +11,39 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.SnapshotArray;
 
 public class MenuStage extends Stage {
-	private static final String BUTTONPANEL = "buttonpanel";
+	private static final String PREFERENCE_STORE_VIRTUAL_BEER = "VirtualBeer";
+  private static final String PREFERENCE_SHOW_INSTRUCTIONS = "showInstructions";
+  private static final String BUTTONPANEL = "buttonpanel";
   public static final String LIGHTSTRIPOFF = "lightstripoff";
 	public static final String LIGHTSTRIPRED = "lightstripred";
 	public static final String LIGHTSTRIPAMBER = "lightstripamber";
 	public static final String LIGHTSTRIPGREEN = "lightstripgreen";
   private static final String BUTTON_CAMERA_LARGE = "camera_large";
   private static final String BUTTON_CAMERA_SMALL = "camera_small";
-
+  private final static String INSTRUCTIONS_1 = "instructions_1";
+  private final static String INSTRUCTIONS_2 = "instructions_2";
+  private final static String INSTRUCTIONS_3_FLASH = "instructions_3_flash";
+  private final static String INSTRUCTIONS_3_NO_FLASH = "instructions_3_no_flash";
+  private final static String INSTRUCTIONS_4 = "instructions_4";
+  private final static String[] INSTRUCTIONS_NO_FLASH_LIST = new String[]
+      {
+        INSTRUCTIONS_1,
+        INSTRUCTIONS_2,
+        INSTRUCTIONS_3_NO_FLASH,
+        INSTRUCTIONS_4
+      };
+  private final static String[] INSTRUCTIONS_FLASH_LIST = new String[]
+      {
+        INSTRUCTIONS_1,
+        INSTRUCTIONS_2,
+        INSTRUCTIONS_3_FLASH,
+        INSTRUCTIONS_4
+      };
+  
   enum Action{
 		FLASH,
 		CAMERA,
@@ -56,12 +79,22 @@ public class MenuStage extends Stage {
 	private Table tableCameraSmall;
 	private Table tableCameraLarge;
 	private Group lightGroup;
+	private Group instructionsGroup;
 	
 	private boolean hasFlash;
 	private MenuStageListener listener;
+	private int instructionToDisplay = -1; // -1 means don't show instructions
+	private String[] instructionsList = INSTRUCTIONS_FLASH_LIST;
 
 	public MenuStage(float width, float height, boolean keepAspect, MenuStageListener listener) {
 		super(width, height, keepAspect);
+		
+		Preferences preferences = Gdx.app.getPreferences(PREFERENCE_STORE_VIRTUAL_BEER);
+    if (preferences.getBoolean(PREFERENCE_SHOW_INSTRUCTIONS, true))
+		{
+		  startShowingInstructions();
+		}
+		preferences.putBoolean(PREFERENCE_SHOW_INSTRUCTIONS, false);
 		this.listener = listener;
 		
 		float panelHeight = (height - this.getGutterHeight() * 2)/6;
@@ -71,6 +104,14 @@ public class MenuStage extends Stage {
 		float buttonWidth = (panelWidth - buttonMargin * 4 - panelPadding * 2) / 3 ;
 		float buttonHeight = panelHeight / 1 - buttonMargin * 2 - panelPadding * 2;
 
+		// instructions group
+		instructionsGroup = new Group();
+		for (String instruction : INSTRUCTIONS_FLASH_LIST)
+    {
+      createInstructionImage(width, height, instruction);
+    }
+		createInstructionImage(width, height, INSTRUCTIONS_3_NO_FLASH);
+		
 		// light group
 		float lightGroupWidth = buttonWidth * 3 + buttonMargin * 2;
 		lightGroup = new Group();
@@ -103,6 +144,20 @@ public class MenuStage extends Stage {
 
 		setLight(LIGHTSTRIPOFF);
 	}
+
+  private void createInstructionImage(float width, float height, String instruction)
+  {
+    Image image = new Image(skin.getDrawable(instruction));
+    image.setName(instruction);
+    image.setOrigin(image.getWidth()/2, image.getHeight()/2);
+    image.setPosition(width/2, height/2);
+    instructionsGroup.addActor(image);
+  }
+
+  private void startShowingInstructions()
+  {
+    instructionToDisplay = 0;
+  }
 
   public void setLight(String lightName)
   {
@@ -154,12 +209,31 @@ public class MenuStage extends Stage {
 
 	public void setHasFlash(boolean hasFlash) {
 		this.hasFlash = hasFlash;
+		instructionsList = hasFlash ? INSTRUCTIONS_FLASH_LIST : INSTRUCTIONS_NO_FLASH_LIST;
 	}
 	
 	@Override
 	public void draw() {
 		this.tableCameraSmall.setVisible(hasFlash);
 		this.tableCameraLarge.setVisible(!hasFlash);
+		
+		// handle drawing the instructions
+		lightGroup.setVisible(false);
+		if (instructionToDisplay >= 0)
+		{
+		  lightGroup.setVisible(true);
+		  for (Actor actor : lightGroup.getChildren())
+      {
+        actor.setVisible(false);
+      }
+		  lightGroup.findActor(instructionsList[instructionToDisplay++]).setVisible(true);
+		  
+		  // once all instructions are drawn turn them off
+		  if (instructionToDisplay > instructionsList.length)
+		  {
+		    instructionToDisplay=-1;
+		  }
+		}
 		super.draw();
 	}
 	
