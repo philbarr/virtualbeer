@@ -248,6 +248,8 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
       if (!deinitTrackersResult) throw new VuforiaException(VuforiaException.TRACKERS_DEINITIALIZATION_FAILURE, "Failed to deinitialize trackers");
 
     }
+    
+    Gdx.app.log(LOGTAG, "Vuforia unloaded");
   }
 
   private boolean doUnloadTrackersData()
@@ -363,11 +365,6 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
 
   }
   
-  public void onCreate()
-  {
-    Vuforia.onSurfaceCreated();
-  }
-
   // Methods to be called to handle lifecycle
   @Override
   public void onResume()
@@ -375,12 +372,11 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
     // Vuforia-specific resume operation
     Vuforia.onResume();
     Vuforia.onSurfaceCreated();
-    if (!m_started) 
+    if (m_started) 
     {
       try
       {
         startAR(mCamera);
-        m_started=true;
       }
       catch (VuforiaException e)
       {
@@ -393,7 +389,6 @@ public class AndroidVuforiaSession implements VuforiaSession, UpdateCallbackInte
   {
     if (m_started) {
       stopCamera();
-      m_started = false;
     }
 
     Vuforia.onPause();
