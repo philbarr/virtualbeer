@@ -87,19 +87,6 @@
          x="210.11682"
          y="660.38586" />
     </mask>
-    <filter
-       color-interpolation-filters="sRGB"
-       inkscape:collect="always"
-       id="filter4146-5"
-       x="-0.029999999"
-       width="1.0599999"
-       y="-0.12"
-       height="1.24">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="2.5"
-         id="feGaussianBlur4148-1" />
-    </filter>
     <mask
        maskUnits="userSpaceOnUse"
        id="mask4151-1">
@@ -111,39 +98,6 @@
          x="210.11682"
          y="660.38586" />
     </mask>
-    <filter
-       color-interpolation-filters="sRGB"
-       inkscape:collect="always"
-       id="filter4146-52"
-       x="-0.029999999"
-       width="1.0599999"
-       y="-0.12"
-       height="1.24">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="2.5"
-         id="feGaussianBlur4148-7" />
-    </filter>
-    <filter
-       inkscape:collect="always"
-       id="filter5546"
-       x="-0.060249574"
-       width="1.1204991"
-       y="-0.2409983"
-       height="1.4819966">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="5.0207979"
-         id="feGaussianBlur5548" />
-    </filter>
-    <filter
-       inkscape:collect="always"
-       id="filter5554">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="1.2638814"
-         id="feGaussianBlur5556" />
-    </filter>
     <clipPath
        clipPathUnits="userSpaceOnUse"
        id="clipPath5655">
@@ -186,8 +140,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
-     inkscape:cx="306.63349"
-     inkscape:cy="-70.57129"
+     inkscape:cx="195.20492"
+     inkscape:cy="-76.642719"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -218,7 +172,7 @@
      id="layer1"
      transform="translate(-80.000003,-405.93361)">
     <rect
-       style="opacity:0.29999999999999999;fill:#67ff00;fill-opacity:1;stroke:none"
+       style="opacity:1;fill:#67ff00;fill-opacity:1;stroke:none"
        id="rect3871"
        width="200"
        height="50"
