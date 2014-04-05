@@ -10,13 +10,17 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
+import com.badlogic.gdx.LifecycleListener;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+import com.badlogic.gdx.backends.android.AndroidGraphics;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.qualcomm.vuforia.Vuforia;
 import com.simplyapped.libgdx.ext.ui.AndroidOSDialog;
 import com.simplyapped.libgdx.ext.vuforia.AndroidVuforiaSession;
+import com.simplyapped.libgdx.ext.vuforia.VuforiaImageTargetBuilder;
 
 public class VirtualBeerActivity extends AndroidApplication
 {
@@ -38,7 +42,7 @@ public class VirtualBeerActivity extends AndroidApplication
     adParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
 
     AdView adView = new AdView(this);
-    adView.setAdSize(AdSize.BANNER);
+    adView.setAdSize(AdSize.SMART_BANNER);
     adView.setAdUnitId(GOOLGE_AD_UNIT_ID);
 
     AdRequest adRequest = new AdRequest.Builder()
@@ -50,12 +54,11 @@ public class VirtualBeerActivity extends AndroidApplication
     cfg.useGL20 = true;
 
     VirtualBeerGame game = new VirtualBeerGame();
-    vuforia = new AndroidVuforiaSession(this);
-    vuforia.setHasAutoFocus(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS));
-    vuforia.setHasFlash(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH));
+    createVuforiaInstance();
     game.setVuforia(vuforia);
     game.setDialog(new AndroidOSDialog(this));
-    vuforia.initAsync();
+    
+    
     gameview = initializeForView(game, cfg);
 
     try
@@ -69,9 +72,21 @@ public class VirtualBeerActivity extends AndroidApplication
 
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-    layout.addView(gameview, adParams);
-    layout.addView(adView);
-    setContentView(layout, createLayoutParams());
+    layout.addView(gameview, createLayoutParams());
+    layout.addView(adView, adParams);
+    layout.setPadding(0, 1, 0, 0);
+    setContentView(layout);
+  }
+
+  private void createVuforiaInstance()
+  {
+    if (vuforia == null)
+    {
+      vuforia = new AndroidVuforiaSession(this);
+      vuforia.setHasAutoFocus(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS));
+      vuforia.setHasFlash(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH));
+      vuforia.initAsync();
+    }
   }
 
   protected FrameLayout.LayoutParams createLayoutParams()
@@ -90,6 +105,5 @@ public class VirtualBeerActivity extends AndroidApplication
     super.onConfigurationChanged(config);
 
     vuforia.onConfigurationChanged();
-
   }
 }
