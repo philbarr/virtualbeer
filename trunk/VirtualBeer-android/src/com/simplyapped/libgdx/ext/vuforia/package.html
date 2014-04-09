@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Vuforia Process</title>
+</head>
+<body>
+	<h3>Vuforia Initialization Process</h3>
+	<ul>
+	   <li>Vuforia.setInitParameters(activity, Vuforia.GL_20)</li>
+		<li>Vuforia.init(); // call repeatedly until loaded, returns a progress value 
+		  <ul>
+		  <li>store orientation so we can determine whether to stretch the in X or Y direction in video config</li>
+		  <li>store screen dimensions for later user in video config</li>
+		  <li>m_activity.getWindow().setFlags( <BR>
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, <BR>
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);</li>
+		  </ul>
+		</li>
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+		<li></li>
+	</ul>
+</body>
+</html>

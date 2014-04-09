@@ -19,65 +19,72 @@ btn_camera_large_on
   index: -1
 btn_camera_small_off
   rotate: false
-  xy: 724, 846
+  xy: 724, 839
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
 btn_camera_small_on
   rotate: false
-  xy: 724, 204
+  xy: 724, 670
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
+btn_exit
+  rotate: false
+  xy: 604, 171
+  size: 330, 159
+  orig: 330, 159
+  offset: 0, 0
+  index: -1
 btn_flash_off
   rotate: false
-  xy: 364, 846
+  xy: 724, 501
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
 btn_flash_on
   rotate: false
-  xy: 785, 677
-  size: 211, 167
-  orig: 211, 167
-  offset: 0, 0
-  index: -1
-btn_menu
-  rotate: false
-  xy: 785, 508
+  xy: 724, 332
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
 buttonpanel
   rotate: false
-  xy: 2, 171
-  size: 720, 200
-  orig: 720, 200
+  xy: 2, 406
+  size: 720, 600
+  orig: 720, 600
   offset: 0, 0
   index: -1
-instructions
-  rotate: false
-  xy: 364, 425
-  size: 419, 419
-  orig: 419, 419
-  offset: 0, 0
-  index: 1
 lightstripamber
   rotate: false
-  xy: 364, 373
+  xy: 2, 354
   size: 600, 50
   orig: 600, 50
   offset: 0, 0
   index: -1
-viewfinder
+lightstripgreen
   rotate: false
-  xy: 2, 373
-  size: 360, 640
-  orig: 360, 640
+  xy: 2, 302
+  size: 600, 50
+  orig: 600, 50
+  offset: 0, 0
+  index: -1
+lightstripoff
+  rotate: false
+  xy: 2, 250
+  size: 600, 50
+  orig: 600, 50
+  offset: 0, 0
+  index: -1
+lightstripred
+  rotate: false
+  xy: 2, 198
+  size: 600, 50
+  orig: 600, 50
   offset: 0, 0
   index: -1
 
@@ -85,52 +92,57 @@ beermenu2.png
 format: RGBA8888
 filter: Nearest,Nearest
 repeat: none
-instructions
+btn_instructions
   rotate: false
-  xy: 2, 579
-  size: 419, 419
-  orig: 419, 419
-  offset: 0, 0
-  index: 2
-instructions
-  rotate: false
-  xy: 423, 158
-  size: 419, 419
-  orig: 419, 419
-  offset: 0, 0
-  index: 4
-instructions_3_flash
-  rotate: false
-  xy: 2, 158
-  size: 419, 419
-  orig: 419, 419
+  xy: 2, 10
+  size: 330, 159
+  orig: 330, 159
   offset: 0, 0
   index: -1
-instructions_3_no_flash
+btn_menu
   rotate: false
-  xy: 423, 579
+  xy: 334, 2
+  size: 211, 167
+  orig: 211, 167
+  offset: 0, 0
+  index: -1
+instructionsfour
+  rotate: false
+  xy: 2, 592
   size: 419, 419
   orig: 419, 419
   offset: 0, 0
   index: -1
-lightstripgreen
+instructionsone
   rotate: false
-  xy: 2, 106
-  size: 600, 50
-  orig: 600, 50
+  xy: 2, 171
+  size: 419, 419
+  orig: 419, 419
   offset: 0, 0
   index: -1
-lightstripoff
+instructionsthreeflash
   rotate: false
-  xy: 2, 54
-  size: 600, 50
-  orig: 600, 50
+  xy: 423, 592
+  size: 419, 419
+  orig: 419, 419
   offset: 0, 0
   index: -1
-lightstripred
+instructionsthreenoflash
+  rotate: false
+  xy: 423, 171
+  size: 419, 419
+  orig: 419, 419
+  offset: 0, 0
+  index: -1
+
+beermenu3.png
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+instructionstwo
   rotate: false
   xy: 2, 2
-  size: 600, 50
-  orig: 600, 50
+  size: 419, 419
+  orig: 419, 419
   offset: 0, 0
   index: -1

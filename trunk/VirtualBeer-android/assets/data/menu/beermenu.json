@@ -23,5 +23,11 @@
 		menu: {
 			up: btn_menu,
 		},
+		instructions: {
+			up: btn_instructions,
+		},
+		exit: {
+			up: btn_exit,
+		},
 	},
 }
