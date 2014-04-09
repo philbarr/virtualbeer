@@ -1,20 +1,20 @@
 package com.simplyapped.libgdx.ext.ui;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Handler;
 import android.view.View;
 import android.widget.Toast;
-
 import com.badlogic.gdx.backends.android.AndroidApplication;
 
 public class AndroidOSDialog implements OSDialog {
 	
     Handler uiThread;
-    AndroidApplication appContext;
+    Activity appContext;
     View testView;
  
-    public AndroidOSDialog(AndroidApplication appContext) {
+    public AndroidOSDialog(Activity appContext) {
         uiThread = new Handler();
         this.appContext = appContext;
     }

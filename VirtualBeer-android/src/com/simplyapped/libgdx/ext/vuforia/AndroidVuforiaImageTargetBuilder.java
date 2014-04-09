@@ -93,6 +93,7 @@ public class AndroidVuforiaImageTargetBuilder implements VuforiaImageTargetBuild
 	            	case ImageTargetBuilder.FRAME_QUALITY.FRAME_QUALITY_HIGH:
 	            		return FRAME_QUALITY_HIGH;
             		default:
+            		  targetBuilder.startScan();
             			return FRAME_QUALITY_NONE;
             	}
             }
