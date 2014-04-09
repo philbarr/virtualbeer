@@ -64,10 +64,15 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   {
     preferences = Gdx.app.getPreferences("VirtualBeer");
     
+    if (vuforia != null)
+    {
+      vuforia.setListener(this);
+      vuforia.setExtendedTracking(true);
+    }
     
     
     modelBatch = new ModelBatch();
-    stage = new MenuStage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, this);
+    stage = new MenuStage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, this, vuforia != null && vuforia.hasFlash());
 
     assets = new AssetManager();
     assets.load(DATA, Model.class);
@@ -88,12 +93,6 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 
     instances.add(instance);
 
-    if (vuforia != null)
-    {
-      vuforia.setListener(this);
-      vuforia.setExtendedTracking(true);
-    }
-
     Gdx.input.setInputProcessor(stage);
     Gdx.input.setCatchMenuKey(true);
 
@@ -104,8 +103,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
       {
         if (keycode == Keys.BACK || keycode == Keys.BACKSPACE)
         {
-          vuforia.stop();
-          Gdx.app.exit();
+          quit();
           return true;
         }
         return false;
@@ -177,12 +175,11 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 
       vuforia.endRendering();
 
-      if (stage != null)
-      {
-        stage.setHasFlash(vuforia.hasFlash());
-        stage.act();
-        stage.draw();
-      }
+    }
+    if (stage != null)
+    {
+      stage.act();
+      stage.draw();
     }
   }
 
@@ -203,11 +200,13 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 
   public void resume()
   {
+    Gdx.app.log(VirtualBeerGame.class.toString(), "VBG RESUME");
     if (vuforia != null)
     {
       vuforia.onResume();
       vuforia.setListener(this);
       vuforia.setExtendedTracking(true);
+      builder.startScan();
     }
   }
 
@@ -347,5 +346,12 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   {
     isTrackingTarget = isTracking;
     stage.setIsTrackingTarget(isTracking);
+  }
+
+  @Override
+  public void quit()
+  {
+    vuforia.stop();
+    Gdx.app.exit();
   }
 }

@@ -10,5 +10,7 @@ public interface MenuStageListener {
 	 * @return the new state of the camera (true for running, false for not running)
 	 */
 	void cameraButtonClicked();
+
+  void quit();
 	
 }
