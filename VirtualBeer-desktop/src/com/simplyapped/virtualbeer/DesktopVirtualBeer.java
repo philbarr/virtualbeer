@@ -16,7 +16,7 @@ public class DesktopVirtualBeer {
 		//Vuforia
 		DesktopVuforiaSession vuforia = new DesktopVuforiaSession();
 		vuforia.setHasAutoFocus(true);
-		vuforia.setHasFlash(true);
+		vuforia.setHasFlash(false);
 
 		//Dialogs
 		DesktopOSDialog dialogs = new DesktopOSDialog();
