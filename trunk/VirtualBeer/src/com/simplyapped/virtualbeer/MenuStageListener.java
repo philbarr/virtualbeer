@@ -12,5 +12,7 @@ public interface MenuStageListener {
 	void cameraButtonClicked();
 
   void quit();
+
+  void focus();
 	
 }

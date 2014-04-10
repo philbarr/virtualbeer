@@ -3,7 +3,7 @@
    ROBOCOPY     ::     Robust File Copy for Windows                              
 -------------------------------------------------------------------------------
 
-  Started : Tue Apr 08 20:45:22 2014
+  Started : Thu Apr 10 18:47:15 2014
 
    Source : C:\Development\Java\Eclipse\Kepler\VirtualBeer\resources\images\menu\atlas\
      Dest : C:\Development\Java\Eclipse\Kepler\VirtualBeer-android\assets\data\menu\
@@ -14,25 +14,26 @@
 
 ------------------------------------------------------------------------------
 
-	                   4	C:\Development\Java\Eclipse\Kepler\VirtualBeer\resources\images\menu\atlas\
+	                   5	C:\Development\Java\Eclipse\Kepler\VirtualBeer\resources\images\menu\atlas\
 	  *EXTRA File 		     659	beermenu.json
 	  *EXTRA File 		   11662	liberation32.fnt
 	  *EXTRA File 		   15522	liberation32.png
-	    Newer     		    2230	beermenu.atlas  0%  100%  
+	    Newer     		    2396	beermenu.atlas  0%  100%  
 	    Newer     		  253901	beermenu.png  0%   51%  100%  
-	    Newer     		  124211	beermenu2.png  0%  100%  
-	    Newer     		   56889	beermenu3.png  0%  100%  
+	    Newer     		  134145	beermenu2.png  0%   97%  100%  
+	    Newer     		   23107	beermenu3.png  0%  100%  
+	    New File  		   56889	beermenu4.png  0%  100%  
 
 ------------------------------------------------------------------------------
 
                Total    Copied   Skipped  Mismatch    FAILED    Extras
     Dirs :         1         0         1         0         0         0
-   Files :         4         4         0         0         0         3
-   Bytes :   426.9 k   426.9 k         0         0         0    27.1 k
+   Files :         5         5         0         0         0         3
+   Bytes :   459.4 k   459.4 k         0         0         0    27.1 k
    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
 
 
-   Speed :            54653875 Bytes/sec.
-   Speed :            3127.319 MegaBytes/min.
+   Speed :            10691772 Bytes/sec.
+   Speed :             611.788 MegaBytes/min.
 
-   Ended : Tue Apr 08 20:45:22 2014
+   Ended : Thu Apr 10 18:47:15 2014

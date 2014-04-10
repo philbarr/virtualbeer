@@ -57,41 +57,24 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   private Model beerModel;
   private boolean animComplete;
   
-  private Preferences preferences;
-
   @Override
   public void create()
   {
-    preferences = Gdx.app.getPreferences("VirtualBeer");
-    
-    if (vuforia != null)
-    {
-      vuforia.setListener(this);
-      vuforia.setExtendedTracking(true);
-    }
-    
-    
-    modelBatch = new ModelBatch();
-    stage = new MenuStage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, this, vuforia != null && vuforia.hasFlash());
 
     assets = new AssetManager();
     assets.load(DATA, Model.class);
-    assets.finishLoading();
 
     int width = Gdx.graphics.getWidth();
     int height = Gdx.graphics.getHeight();
-
-    cam = new PerspectiveCamera(fieldOfView, width, height);
+    
+    modelBatch = new ModelBatch();
+    stage = new MenuStage(width, height, true, this, vuforia != null && vuforia.hasFlash());
+    cam = new PerspectiveCamera(fieldOfView, vuforia.getWidth(), vuforia.getHeight());
 
     environment = new Environment();
     environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 1f, 1f, 1f, 1f));
     light = new DirectionalLight().set(1f, 1f, 1f, -1f, -1f, -1f);
     environment.add(light);
-
-    beerModel = assets.get(DATA, Model.class);
-    instance = new ModelInstance(beerModel);
-
-    instances.add(instance);
 
     Gdx.input.setInputProcessor(stage);
     Gdx.input.setCatchMenuKey(true);
@@ -109,14 +92,29 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
         return false;
       }
     });
+    if (vuforia != null)
+    {
+      vuforia.setExtendedTracking(true);
+      vuforia.setListener(this);
+    }
   }
 
   @Override
   public void render()
   {
     int renderables = 0;
-    if ((vuforia != null) && vuforia.isInited())
+    boolean assetsLoaded = assets.update();
+    int progressValue = vuforia.getProgressValue();
+    if ((vuforia != null) && vuforia.isRunning() && assetsLoaded && progressValue == 100)
     {
+      if (beerModel == null)
+      {
+        beerModel = assets.get(DATA, Model.class);
+        instance = new ModelInstance(beerModel);
+        instances.add(instance);
+      }
+      
+      stage.showLoadingSpinner(false);
       Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
       Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
@@ -125,7 +123,6 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
 
       VuforiaState state = vuforia.beginRendering();
       vuforia.drawVideoBackground();
-
       renderables = state.getNumTrackableResults();
 
       Matrix4 vuforiaProjection = vuforia.getProjectionMatrix();
@@ -172,14 +169,20 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
         modelBatch.render(instances, environment);
         modelBatch.end();
       }
-
       vuforia.endRendering();
-
     }
     if (stage != null)
     {
-      stage.act();
-      stage.draw();
+      try
+      {
+        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        stage.act();
+        stage.draw();
+      }
+      catch (Exception e)
+      {
+        Gdx.app.error(VirtualBeerGame.class.toString(), "Failed to draw MenuStage correctly",e);
+      }
     }
   }
 
@@ -187,7 +190,6 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   public void dispose()
   {
     modelBatch.dispose();
-    if (vuforia != null) vuforia.stop();
     try
     {
       assets.dispose();
@@ -201,28 +203,32 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   public void resume()
   {
     Gdx.app.log(VirtualBeerGame.class.toString(), "VBG RESUME");
-    if (vuforia != null)
+    if (vuforia != null && vuforia.isInited())
     {
-      vuforia.onResume();
-      vuforia.setListener(this);
-      vuforia.setExtendedTracking(true);
-      builder.startScan();
+      try
+      {
+        vuforia.startCamera();
+        vuforia.getTargetBuilder().startScan();
+      }
+      catch (VuforiaException e)
+      {
+        Gdx.app.log(VirtualBeerGame.class.toString(), "Failed to start the camera");
+      }
     }
   }
 
   public void resize(int width, int height)
   {
-    if (vuforia != null) vuforia.onResize(width, height);
   }
 
   public void pause()
   {
-    if (builder != null)
+    isScanning = false;
+    if (vuforia != null && vuforia.isRunning()) 
     {
-      builder.stopScan();
-      isScanning = false;
+      vuforia.getTargetBuilder().stopScan();
+      vuforia.stopCamera();
     }
-    if (vuforia != null) vuforia.onPause();
   }
 
   public VuforiaSession getVuforia()
@@ -238,7 +244,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   @Override
   public void onUpdate(VuforiaState state)
   {
-    if ((vuforia != null) && vuforia.isInited() && !isTrackingTarget)
+    if ((vuforia != null) && vuforia.isInited() && vuforia.isRunning() && !isTrackingTarget)
     {
       builder = vuforia.getTargetBuilder();
       if (!isScanning && !isBuilding)
@@ -294,15 +300,12 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   }
 
   @Override
-  public void onInitDone(VuforiaException exception)
+  public void onInitDone()
   {
     if (vuforia != null)
     {
       vuforia.setNumTrackablesHint(5);
-      if (vuforia.hasAutoFocus())
-      {
-        vuforia.setAutoFocus(true);
-      }
+     
     }
   }
 
@@ -351,7 +354,24 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   @Override
   public void quit()
   {
-    vuforia.stop();
+    try
+    {
+      vuforia.deinit();
+    }
+    catch (VuforiaException e)
+    {
+      Gdx.app.log(VirtualBeerGame.class.toString(), "Failed to deinit Vuforia", e);
+    }
     Gdx.app.exit();
+  }
+
+  @Override
+  public void focus()
+  {
+    if (vuforia != null)
+    {
+      vuforia.doFocusCamera();
+    }
+    
   }
 }

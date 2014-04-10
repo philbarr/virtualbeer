@@ -3,15 +3,21 @@ package com.simplyapped.libgdx.ext.vuforia;
 import com.badlogic.gdx.math.Matrix4;
 
 public interface VuforiaSession {
+  // Rendering
 	VuforiaState beginRendering();
 	boolean drawVideoBackground();
 	void endRendering();
+	
+	// starting and stopping
 	boolean isInited();
-	void initAsync();
-	void onResize(int width, int height);
-	void onPause();
-	void onResume();
-	void stop();
+	boolean isRunning();
+	void init();
+	void deinit() throws VuforiaException;
+	void startCamera() throws VuforiaException;
+	void stopCamera();
+	void startTrackers();
+	void stopTrackers();
+
 	VuforiaImageTargetBuilder getTargetBuilder();
 	void setListener(VuforiaListener listener);
 	
@@ -20,17 +26,19 @@ public interface VuforiaSession {
 	 * @param source - the new TrackableSource
 	 */
 	void createTrackable(VuforiaTrackableSource source);
-	public abstract void setExtendedTracking(boolean extendedTracking);
-	public abstract boolean isExtendedTracking();
+	void clearAllTrackables();
+	void setExtendedTracking(boolean extendedTracking);
+	boolean isExtendedTracking();
 	
 	boolean setFlash(boolean on);
 	boolean setAutoFocus(boolean on);
-	void startTrackers();
 	Matrix4 getProjectionMatrix();
-	public abstract double getFieldOfView();
+	double getFieldOfView();
 	boolean setNumTrackablesHint(int numTrackables);
 	boolean hasAutoFocus();
 	boolean hasFlash();
-  void clearAllTrackables();
-	
+  int getProgressValue();
+  int getWidth();
+  int getHeight();
+  void doFocusCamera();
 }
