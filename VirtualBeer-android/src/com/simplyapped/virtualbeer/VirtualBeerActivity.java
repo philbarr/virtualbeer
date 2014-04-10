@@ -21,36 +21,33 @@ import com.google.android.gms.ads.AdView;
 import com.qualcomm.vuforia.CameraDevice;
 import com.simplyapped.libgdx.ext.ui.AndroidOSDialog;
 import com.simplyapped.libgdx.ext.vuforia.AndroidVuforiaSession;
+import com.simplyapped.libgdx.ext.vuforia.VuforiaException;
 
 public class VirtualBeerActivity extends VuforiaAndroidApplication
 {
   private static final String LOGTAG = VirtualBeerActivity.class.toString();
   private static final String GOOLGE_AD_UNIT_ID = "ca-app-pub-7782303924153821/5391574604";
-  private static AndroidVuforiaSession vuforia;
+  private AndroidVuforiaSession vuforia;
   private View gameview;
 
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
-    
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    getWindow().setFlags( 
+        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, 
+        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
     try
     {
-      Camera.open(CameraDevice.CAMERA.CAMERA_DEFAULT).setErrorCallback(new Camera.ErrorCallback() {
-        @Override
-        public void onError(int error, Camera camera)
-        {
-          Toast.makeText(getApplicationContext(), "Camera died. Attempting to restart", Toast.LENGTH_LONG).show();
-          createVuforiaInstance();
-          vuforia.initAsync();
-        }});
-      log(LOGTAG, "Error callback registered successfully");
+      requestWindowFeature(Window.FEATURE_NO_TITLE);
     }
-    catch (Exception e)
+    catch (Exception ex)
     {
-      Gdx.app.log(LOGTAG, "Failed to register camera error callback: ", e);
+      log("AndroidApplication", "Content already displayed, cannot request FEATURE_NO_TITLE", ex);
     }
-
+    
     // ADS view
     RelativeLayout layout = new RelativeLayout(this);
     RelativeLayout.LayoutParams adParams = new RelativeLayout.LayoutParams
@@ -77,25 +74,11 @@ public class VirtualBeerActivity extends VuforiaAndroidApplication
     
     
     gameview = initializeForView(game, cfg);
-
     
-    
-    try
-    {
-      requestWindowFeature(Window.FEATURE_NO_TITLE);
-    }
-    catch (Exception ex)
-    {
-      log("AndroidApplication", "Content already displayed, cannot request FEATURE_NO_TITLE", ex);
-    }
-
-    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
     layout.addView(gameview, createLayoutParams());
     layout.addView(adView, adParams);
     layout.setPadding(0, 1, 0, 0);
     setContentView(layout);
-    
   }
 
   private void createVuforiaInstance()
@@ -105,7 +88,7 @@ public class VirtualBeerActivity extends VuforiaAndroidApplication
       vuforia = new AndroidVuforiaSession(this);
       vuforia.setHasAutoFocus(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS));
       vuforia.setHasFlash(getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH));
-      vuforia.initAsync();
+      vuforia.init();
     }
   }
 
@@ -125,5 +108,20 @@ public class VirtualBeerActivity extends VuforiaAndroidApplication
     super.onConfigurationChanged(config);
 
     vuforia.onConfigurationChanged();
+  }
+  
+  @Override
+  protected void onDestroy()
+  {
+    super.onDestroy();
+    try
+    {
+      vuforia.deinit();
+    }
+    catch (VuforiaException e)
+    {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 }

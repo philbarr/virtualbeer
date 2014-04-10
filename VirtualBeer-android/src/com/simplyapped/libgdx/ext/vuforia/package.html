@@ -3,22 +3,21 @@
 <head>
 <meta charset="ISO-8859-1">
 <title>Vuforia Process</title>
-<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?autorun=true&skin=sunburst"></script>
+<script
+	src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?autorun=true&skin=sunburst"></script>
 </head>
 <body>
 	<h2>Vuforia Process</h2>
 	<h3>Initialization</h3>
 	<ul>
-		<li>SYNCHRONIZED<BR>Tell Vuforia to use OpenGLES 2.0 (don't bother with anything else) <pre class="prettyprint ">int progress = Vuforia.setInitParameters(activity, Vuforia.GL_20)</pre></li>
-		<li>SYNCHRONIZED<BR> <pre class="prettyprint ">Vuforia.init(); // call repeatedly until loaded, returns a progress value</pre>
-			<ul>
-				<li>store orientation so we can determine whether to stretch
-					the in X or Y direction in video config</li>
-				<li>store screen dimensions for later user in video config</li>
-			</ul> <pre class="prettyprint ">
+		<li>SYNCHRONIZED<BR>Tell Vuforia to use OpenGLES 2.0 (don't
+			bother with anything else) and set activity to keep screen on <pre
+				class="prettyprint ">
+Vuforia.setInitParameters(activity, Vuforia.GL_20);
 m_activity.getWindow().setFlags( 
   WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, 
-  WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);</pre>
+  WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);</pre></li>
+		<li>SYNCHRONIZED<BR> <pre class="prettyprint ">Vuforia.init(); // call repeatedly until loaded, returns a progress value</pre></li>
 		<li>Initialise the trackers (change ImageTracker class type for
 			different trackers): <pre class="prettyprint ">
 TrackerManager trackerManager =	TrackerManager.getInstance();
@@ -29,14 +28,13 @@ if (tracker != null); // success</pre>
 				class="prettyprint  ">
 TrackerManager trackerManager =	TrackerManager.getInstance();
 // if imageTracker is null we didn't call trackerManager.initTracker();
-ImageTracker imageTracker = (ImageTracker);
-trackerManager.getTracker(ImageTracker.getClassType());
+ImageTracker imageTracker = (ImageTracker)trackerManager.getTracker(ImageTracker.getClassType());
 DataSet dataSet = imageTracker.createDataSet();
 dataSet.load(path, DataSet.STORAGE_TYPE); // not necessary for User Defined Targets as you add them at runtime
 imageTracker.activateDataSet(dataSet); // returns false if data set failed to load</pre>
 		</li>
 		<li>Register the callback<pre class="prettyprint ">
-Vuforia.registerCallback(SampleApplicationSession.this); // calls QCAR_onUpdate(State state) after end of each tracking phase</pre>
+Vuforia.registerCallback(this); // calls QCAR_onUpdate(State state) after end of each tracking phase</pre>
 		</li>
 		<li>Start the ImageTargetBuilder if using User Defined Targets <pre
 				class="prettyprint ">
@@ -62,13 +60,15 @@ if (imageTracker != null)
 		<li>Now add the GL surface view. It is important that the OpenGL
 			ES surface view gets added BEFORE the camera is started and video
 			background is configured. <pre class="prettyprint ">
-activity.setContentView(view); // OR
+activity.setContentView(view); 
+// OR
 activity.addContentView(view);</pre>
 		</li>
-		<li>start the camera and set it up <pre class="prettyprint ">
+		<li id="startCamera">start the camera and set it up <pre
+				class="prettyprint ">
 //camera== one of CameraDevice.CAMERA enum
 CameraDevice.getInstance().init(camera); // returns false if unable to open camera</pre>
-			<ul>
+			<ul id="setVideoConfig">
 				<li>Configure the video background. There are two sizes to
 					worry about - the size of the screen and the size of the picture
 					coming back from the camera. We need to maintain the aspect ration
@@ -76,48 +76,66 @@ CameraDevice.getInstance().init(camera); // returns false if unable to open came
 					to do this we stretch the size of the rendered preview to fit the
 					screen either vertically or horizontally depending on if the device
 					is being held horizontally or vertically. <BR>This affects the
-					size of what is being rendered during the <code class="prettyprint ">Renderer.getInstance().drawVideoBackground();</code><BR>Hence,
+					size of what is being rendered during the <code
+						class="prettyprint ">&nbsp;Renderer.getInstance().drawVideoBackground();&nbsp;</code><BR>Hence,
 					you will need to pass these to LibGDX when creating LibGDX
 					cameras/spritebatches/stages. (??? is this last bit true or can you
 					draw to the glview twice during on render call? prob not cos of
 					what libgdx calls)
 				</li>
 			</ul> <pre class="prettyprint ">
-  CameraDevice cameraDevice = CameraDevice.getInstance();
-  VideoMode vm = cameraDevice.getVideoMode(CameraDevice.MODE.MODE_DEFAULT);
-  VideoBackgroundConfig config = new VideoBackgroundConfig();
-  config.setEnabled(true);
-  config.setSynchronous(true);
-  config.setPosition(new Vec2I(0, 0));
-  
-  int xSize = 0, ySize = 0;
-  if (mIsPortrait)
+DisplayMetrics metrics = new DisplayMetrics();
+activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+screenWidth = metrics.widthPixels;
+screenHeight = metrics.heightPixels;
+
+Configuration activityConfig = activity.getResources().getConfiguration();
+boolean isPortrait = true;
+switch (activityConfig.orientation)
+{
+  case Configuration.ORIENTATION_PORTRAIT:
+    isPortrait = true;
+    break;
+  case Configuration.ORIENTATION_LANDSCAPE:
+    isPortrait = false;
+    break;
+  case Configuration.ORIENTATION_UNDEFINED:
+  default:
+    break;
+}
+
+CameraDevice cameraDevice = CameraDevice.getInstance();
+VideoMode vm = cameraDevice.getVideoMode(CameraDevice.MODE.MODE_DEFAULT);
+VideoBackgroundConfig config = new VideoBackgroundConfig();
+config.setEnabled(true);
+config.setSynchronous(true);
+config.setPosition(new Vec2I(0, 0));
+
+int xSize = 0, ySize = 0;
+if (isPortrait)
+{
+  xSize = (int) (vm.getHeight() * (screenHeight / (float) vm.getWidth()));
+  ySize = screenHeight;
+
+  if (xSize < screenWidth)
   {
-      xSize = (int) (vm.getHeight() * (mScreenHeight / (float) vm
-          .getWidth()));
-      ySize = mScreenHeight;
-      
-      if (xSize < mScreenWidth)
-      {
-          xSize = mScreenWidth;
-          ySize = (int) (mScreenWidth * (vm.getWidth() / (float) vm
-              .getHeight()));
-      }
-  } else
-  {
-      xSize = mScreenWidth;
-      ySize = (int) (vm.getHeight() * (mScreenWidth / (float) vm
-          .getWidth()));
-      
-      if (ySize < mScreenHeight)
-      {
-          xSize = (int) (mScreenHeight * (vm.getWidth() / (float) vm
-              .getHeight()));
-          ySize = mScreenHeight;
-      }
+    xSize = screenWidth;
+    ySize = (int) (screenWidth * (vm.getWidth() / (float) vm.getHeight()));
   }
-  config.setSize(new Vec2I(xSize, ySize));
-  Renderer.getInstance().setVideoBackgroundConfig(config);</pre>
+}
+else
+{
+  xSize = screenWidth;
+  ySize = (int) (vm.getHeight() * (screenWidth / (float) vm.getWidth()));
+
+  if (ySize < screenHeight)
+  {
+    xSize = (int) (screenHeight * (vm.getWidth() / (float) vm.getHeight()));
+    ySize = screenHeight;
+  }
+}
+config.setSize(new Vec2I(xSize, ySize));
+Renderer.getInstance().setVideoBackgroundConfig(config);</pre>
 			<ul>
 				<li>Set the video mode (usually default but could be
 					OPTIMIZE_QUALITY or OPTIMIZE_SPEED):<BR>
@@ -131,29 +149,30 @@ CameraDevice.getInstance().selectVideoMode(CameraDevice.MODE.MODE_DEFAULT); // r
 			<ul>
 				<li>Set the frame format to RGB565:</li>
 			</ul> <pre class="prettyprint ">Vuforia.setFrameFormat(PIXEL_FORMAT.RGB565, true); // returns false if fails</pre>
-		<li>Store the projection matrix used by the camera for use later
-			(this only changes when orientation changes):
-<pre	class="prettyprint ">
+		<li id="storeProjectionMatrix">Store the projection matrix used
+			by the camera for use later (this only changes when orientation
+			changes): <pre class="prettyprint ">
 CameraCalibration camCal = CameraDevice.getInstance().getCameraCalibration(); mProjectionMatrix =
 Tool.getProjectionGL(camCal, 10.0f, 5000.0f);</pre>
 		</li>
 	</ul>
-<ul>
-	<li>Start the trackers we have previously inited:<BR> <pre
-			class="prettyprint ">
+	<ul>
+		<li>Start the trackers we have previously inited:<BR> <pre
+				class="prettyprint ">
 Tracker imageTracker = TrackerManager.getInstance().getTracker(
 ImageTracker.getClassType());<BR> if (imageTracker != null) {
 result = imageTracker.start();}</pre></li>
-	<li>Set the focus mode to auto if you can:<pre class="prettyprint ">
+		<li>Set the focus mode to auto if you can:<pre
+				class="prettyprint ">
 CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);</pre>
-...otherwise set up an event to focus the camera on a touch event and call the
-		following in the event:<BR> <pre class="prettyprint ">
+			...otherwise set up an event to focus the camera on a touch event and
+			call the following in the event:<BR> <pre class="prettyprint ">
 CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);</pre></li>
 	</ul>
 	<h3>Shutdown</h3>
 	<ul>
-		<li>Stop the trackers and the camera<BR> 
-		<pre class="prettyprint ">
+		<li id="stopCameraAndTrackers">Stop the trackers and the camera<BR>
+			<pre class="prettyprint ">
 Tracker imageTracker = TrackerManager.getInstance().getTracker(ImageTracker.getClassType());
 if (imageTracker != null)
 {
@@ -179,8 +198,8 @@ if (imageTracker != null) // if null then imageTracker is not inited
   }
 }</pre>
 		</li>
-		<li>SYNCHRONIZED<br>Deinit trackers
-		<pre class="prettyprint ">
+		<li>SYNCHRONIZED<br>Deinit trackers <pre
+				class="prettyprint ">
 TrackerManager trackerManager = TrackerManager.getInstance();
 trackerManager.deinitTracker(ImageTracker.getClassType());</pre>
 		</li>
@@ -188,5 +207,27 @@ trackerManager.deinitTracker(ImageTracker.getClassType());</pre>
 				class="prettyprint ">Vuforia.deinit();</pre>
 		</li>
 	</ul>
+	<h3>On Configuration Changed (you should listen for orientation change events)</h3>
+	<ul>
+		<li><a href="#setVideoConfig">Set video configuration</a></li>
+		<li><a href="#storeProjectionMatrix">Update projection matrix</a></li>
+	</ul>
+	<h3>On Pause</h3>
+	<ul>
+		<li><a href="#stopCameraAndTrackers">Stop the trackers and
+				the camera</a></li>
+		<li>THEN call <code class="prettyprint">&nbsp;Vuforia.onPause();&nbsp;</code></li>
+	</ul>
+	<h3>On Resume</h3>
+	<ul>
+		<li>BEFOREHAND call <code class="prettyprint">&nbsp;Vuforia.onResume();&nbsp;</code></li>
+		<li><a href="#startCamera">Start the camera and the trackers</a></li>
+	</ul>
+	 <h3>Lifecycle Events</h3>
+  <ul>
+    <li>The following Vuforia calls need to be called in your 
+    <code class="prettyprint">&nbsp;android.opengl.GLSurfaceView.Renderer&nbsp;</code> implementation:<BR>
+     <code class="prettyprint">&nbsp;Vuforia.onSurfaceCreated();&nbsp;</code> and <code class="prettyprint">&nbsp;Vuforia.onSurfaceChanged();&nbsp;</code></li>
+  </ul>
 </body>
 </html>

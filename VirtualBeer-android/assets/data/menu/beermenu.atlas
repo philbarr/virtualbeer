@@ -94,48 +94,60 @@ filter: Nearest,Nearest
 repeat: none
 btn_instructions
   rotate: false
-  xy: 2, 10
+  xy: 2, 852
   size: 330, 159
   orig: 330, 159
   offset: 0, 0
   index: -1
 btn_menu
   rotate: false
-  xy: 334, 2
+  xy: 334, 844
   size: 211, 167
   orig: 211, 167
   offset: 0, 0
   index: -1
 instructionsfour
   rotate: false
-  xy: 2, 592
+  xy: 547, 592
   size: 419, 419
   orig: 419, 419
   offset: 0, 0
   index: -1
 instructionsone
   rotate: false
-  xy: 2, 171
+  xy: 2, 423
   size: 419, 419
   orig: 419, 419
   offset: 0, 0
   index: -1
 instructionsthreeflash
   rotate: false
-  xy: 423, 592
+  xy: 423, 171
   size: 419, 419
   orig: 419, 419
   offset: 0, 0
   index: -1
 instructionsthreenoflash
   rotate: false
-  xy: 423, 171
+  xy: 2, 2
   size: 419, 419
   orig: 419, 419
   offset: 0, 0
   index: -1
 
 beermenu3.png
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+spinner
+  rotate: false
+  xy: 2, 2
+  size: 600, 600
+  orig: 600, 600
+  offset: 0, 0
+  index: -1
+
+beermenu4.png
 format: RGBA8888
 filter: Nearest,Nearest
 repeat: none
