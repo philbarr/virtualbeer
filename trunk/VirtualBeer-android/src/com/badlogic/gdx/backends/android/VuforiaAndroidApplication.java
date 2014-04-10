@@ -17,7 +17,6 @@
 package com.badlogic.gdx.backends.android;
 
 import java.lang.reflect.Method;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -32,7 +31,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Audio;
@@ -51,6 +49,7 @@ import com.badlogic.gdx.graphics.GL11;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Clipboard;
 import com.badlogic.gdx.utils.GdxNativesLoader;
+import com.qualcomm.vuforia.Vuforia;
 
 /** An implementation of the {@link Application} interface for Android. Create an {@link Activity} that derives from this class. In
  * the {@link Activity#onCreate(Bundle)} method call the {@link #initialize(ApplicationListener, boolean)} method specifying the
@@ -212,6 +211,7 @@ public class VuforiaAndroidApplication extends Activity implements Application {
 
 	@Override
 	protected void onPause () {
+	  Vuforia.onPause();
 		if (wakeLock != null) wakeLock.release();
 		boolean isContinuous = graphics.isContinuousRendering();
 		graphics.setContinuousRendering(true);
@@ -245,6 +245,7 @@ public class VuforiaAndroidApplication extends Activity implements Application {
 
 	@Override
 	protected void onResume () {
+	  Vuforia.onResume();
 		if (wakeLock != null) wakeLock.acquire();
 		Gdx.app = this;
 		Gdx.input = this.getInput();
