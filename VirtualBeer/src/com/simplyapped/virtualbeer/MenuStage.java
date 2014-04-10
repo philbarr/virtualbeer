@@ -8,8 +8,10 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.RepeatAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -86,6 +88,7 @@ public class MenuStage extends Stage
           }
           break;
       }
+      event.handle();
     }
   }
 
@@ -101,10 +104,12 @@ public class MenuStage extends Stage
   private String[] instructionsList = INSTRUCTIONS_FLASH_LIST;
   private float panelHeight;
   private boolean hasFlash;
+  private Image spinner;
 
   public MenuStage(float width, float height, boolean keepAspect, MenuStageListener listener, boolean hasFlash)
   {
     super(width, height, keepAspect);
+    float gutterWidth = (width-Gdx.graphics.getWidth())/2;
     this.listener = listener;
     this.hasFlash = hasFlash;
 
@@ -125,9 +130,9 @@ public class MenuStage extends Stage
     createInstructionImage(width, height, INSTRUCTIONS_3_NO_FLASH);
 
     // light group
-    float lightGroupWidth = buttonWidthTopRow * 3 + buttonMargin * 2;
+    float lightGroupWidth = buttonWidthTopRow * 3 + buttonMargin * 2 - gutterWidth * 2;
     lightGroup = new Group();
-    lightGroup.setPosition(panelPadding + buttonMargin, panelHeight);
+    lightGroup.setPosition(panelPadding + buttonMargin + gutterWidth, panelHeight);
     float lightGroupHeight = createLight(LIGHTSTRIPOFF, lightGroupWidth);
     createLight(LIGHTSTRIPRED, lightGroupWidth);
     createLight(LIGHTSTRIPAMBER, lightGroupWidth);
@@ -157,10 +162,28 @@ public class MenuStage extends Stage
         + buttonMargin+ panelHeight, buttonWidthBottomRow, buttonHeight));
     table.addActor(createButton(Action.EXIT, BUTTON_EXIT, panelPadding + buttonMargin * 2 + buttonWidthBottomRow * 1, panelPadding + buttonMargin+ panelHeight,
         buttonWidthBottomRow, buttonHeight));
+
+    spinner = new Image(skin.getDrawable("spinner"));
+    spinner.setSize(width * 0.7f, width*0.7f);//make it sqaure
+    spinner.setPosition(Gdx.graphics.getWidth()/2f-spinner.getWidth()/2f, Gdx.graphics.getHeight() /2f - spinner.getHeight()/2f);
+    spinner.setOrigin(spinner.getHeight()/2f, spinner.getWidth()/2f);
+    spinner.addAction(repeat(RepeatAction.FOREVER, sequence( delay(0.1f), ( rotateBy(-30)))));
+    
     this.addActor(lightGroup);
     this.addActor(table);
     this.addActor(instructionsGroup);
+    this.addActor(spinner);
     setLight(LIGHTSTRIPOFF);
+    
+    this.addListener(new ClickListener() {@Override
+    public boolean touchDown(InputEvent event, float x, float y, int pointer, int button)
+    {
+      if (!event.isHandled())
+      {
+        MenuStage.this.listener.focus();
+      }
+      return true;
+    }});
 
     Preferences preferences = Gdx.app.getPreferences(PREFERENCE_STORE_VIRTUAL_BEER);
     if (preferences.getBoolean(PREFERENCE_SHOW_INSTRUCTIONS, true))
@@ -169,6 +192,11 @@ public class MenuStage extends Stage
     }
     preferences.putBoolean(PREFERENCE_SHOW_INSTRUCTIONS, false);
     preferences.flush();
+  }
+
+  public void showLoadingSpinner(boolean show)
+  {
+    spinner.setVisible(show);
   }
 
   private void showFullMenu(boolean show)
@@ -274,12 +302,6 @@ public class MenuStage extends Stage
     button.setSize(width, height);
     button.setName(style);
     return button;
-  }
-
-  @Override
-  public void draw()
-  {
-    super.draw();
   }
 
   public void setIsTrackingTarget(boolean isTracking)
