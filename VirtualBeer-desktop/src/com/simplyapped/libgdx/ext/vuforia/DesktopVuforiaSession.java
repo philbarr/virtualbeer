@@ -31,27 +31,12 @@ public class DesktopVuforiaSession implements VuforiaSession {
 	}
 
 	@Override
-	public void initAsync() {
+	public void init() {
 		if (listener != null){
-			listener.onInitDone(null);
+			listener.onInitDone();
 		}
 	}
 
-	@Override
-	public void onResize(int width, int height) {
-	}
-
-	@Override
-	public void onPause() {
-	}
-
-	@Override
-	public void onResume() {
-	}
-
-	@Override
-	public void stop() {
-	}
 
 	@Override
 	public VuforiaImageTargetBuilder getTargetBuilder() {
@@ -129,6 +114,69 @@ public class DesktopVuforiaSession implements VuforiaSession {
 
   @Override
   public void clearAllTrackables()
+  {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public boolean isRunning()
+  {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
+  @Override
+  public void deinit() throws VuforiaException
+  {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void startCamera() throws VuforiaException
+  {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void stopCamera()
+  {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void stopTrackers()
+  {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public int getProgressValue()
+  {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  @Override
+  public int getWidth()
+  {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  @Override
+  public int getHeight()
+  {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  @Override
+  public void doFocusCamera()
   {
     // TODO Auto-generated method stub
     

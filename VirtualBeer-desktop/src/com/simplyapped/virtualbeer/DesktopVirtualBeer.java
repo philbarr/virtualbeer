@@ -27,6 +27,6 @@ public class DesktopVirtualBeer {
 		
 		LwjglApplication app = new LwjglApplication(game, cfg);
 		
-		vuforia.initAsync();
+		vuforia.init();
 	}
 }
