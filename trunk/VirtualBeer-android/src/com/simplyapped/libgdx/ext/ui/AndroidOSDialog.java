@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Handler;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
 import com.badlogic.gdx.backends.android.AndroidApplication;
@@ -23,8 +24,9 @@ public class AndroidOSDialog implements OSDialog {
     public void showShortToast(final CharSequence toastMessage) {
             uiThread.post(new Runnable() {
                     public void run() {
-                            Toast.makeText(appContext, toastMessage, Toast.LENGTH_SHORT)
-                                            .show();
+                            Toast toast = Toast.makeText(appContext, toastMessage, Toast.LENGTH_SHORT);
+                            toast.setGravity(Gravity.CENTER, 0,0);
+                            toast.show();
                     }
             });
     }

@@ -211,7 +211,6 @@ public class VuforiaAndroidApplication extends Activity implements Application {
 
 	@Override
 	protected void onPause () {
-	  Vuforia.onPause();
 		if (wakeLock != null) wakeLock.release();
 		boolean isContinuous = graphics.isContinuousRendering();
 		graphics.setContinuousRendering(true);
@@ -241,6 +240,7 @@ public class VuforiaAndroidApplication extends Activity implements Application {
 		}
 
 		super.onPause();
+		Vuforia.onPause();
 	}
 
 	@Override
