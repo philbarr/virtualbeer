@@ -1,0 +1,8 @@
+
+keystore pass:
+iafsyugfaiwfagiyeawgfeuagfrekgew
+
+alias:
+virtualbeer
+password:
+mnvcbxiuxyxiuxhkueyfksj
