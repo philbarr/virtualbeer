@@ -1,8 +1,8 @@
 package com.simplyapped.virtualbeer;
 
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -11,14 +11,15 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
-import com.badlogic.gdx.Gdx;
+import com.amazon.device.ads.AdError;
+import com.amazon.device.ads.AdLayout;
+import com.amazon.device.ads.AdRegistration;
+import com.amazon.device.ads.AdTargetingOptions;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.VuforiaAndroidApplication;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
-import com.qualcomm.vuforia.CameraDevice;
 import com.simplyapped.libgdx.ext.ui.AndroidOSDialog;
 import com.simplyapped.libgdx.ext.vuforia.AndroidVuforiaSession;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaException;
@@ -26,10 +27,40 @@ import com.simplyapped.libgdx.ext.vuforia.VuforiaException;
 public class VirtualBeerActivity extends VuforiaAndroidApplication
 {
   private static final String LOGTAG = VirtualBeerActivity.class.toString();
-  private static final String GOOLGE_AD_UNIT_ID = "ca-app-pub-7782303924153821/5391574604";
+  private static final String GOOGLE_AD_UNIT_ID = "ca-app-pub-7782303924153821/5391574604";
   private AndroidVuforiaSession vuforia;
   private View gameview;
+  private AdLayout amazonAdView;
+  private RelativeLayout layout;
 
+  private class AdSwitcher extends AmazonAdListenerAdapter{
+    
+    private Activity activity;
+
+    public AdSwitcher(Activity activity){
+      this.activity = activity;}
+    
+    @Override
+    public void onAdFailedToLoad(AdLayout layout, AdError error) {
+      // ADMOB ADS VIEW AND REQUESTS
+        // Look up the AdView as a resource and load a request.
+        AdView adView = new AdView(VirtualBeerActivity.this);
+        adView.setAdSize(AdSize.SMART_BANNER);
+        adView.setAdUnitId(GOOGLE_AD_UNIT_ID);
+    
+        AdRequest adRequest = new AdRequest.Builder()
+                              .addTestDevice("2339EA1D6F4179678B076F1547710A22")
+                              .build();
+        adView.loadAd(adRequest);
+        if (VirtualBeerActivity.this.amazonAdView != null)
+        {
+          VirtualBeerActivity.this.amazonAdView.destroy();
+        }
+        VirtualBeerActivity.this.layout.addView(adView);
+        Log.d(VirtualBeerActivity.class.toString(), "Amazon ADs failed to load using Admob ads: " + error.getMessage());
+    }
+  }
+  
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
@@ -48,22 +79,17 @@ public class VirtualBeerActivity extends VuforiaAndroidApplication
       log("AndroidApplication", "Content already displayed, cannot request FEATURE_NO_TITLE", ex);
     }
     
-    // ADS view
-    RelativeLayout layout = new RelativeLayout(this);
-    RelativeLayout.LayoutParams adParams = new RelativeLayout.LayoutParams
-        (RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-    adParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-    adParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-
-    AdView adView = new AdView(this);
-    adView.setAdSize(AdSize.SMART_BANNER);
-    adView.setAdUnitId(GOOLGE_AD_UNIT_ID);
-
-    AdRequest adRequest = new AdRequest.Builder()
-                          .addTestDevice("2339EA1D6F4179678B076F1547710A22")
-                          .build();
-    adView.loadAd(adRequest);
-
+    layout = new RelativeLayout(this);
+    
+    /** AMAZON ADS VIEW AND REQUESTS */
+//    AdRegistration.enableTesting(true);
+//    AdRegistration.enableLogging(true);
+    AdRegistration.setAppKey("cbaeb9717771460a892433442cbabb95");
+    this.amazonAdView = new AdLayout(this);
+    this.amazonAdView.setListener(new AdSwitcher(this));
+    this.amazonAdView.setLayoutParams(createAdParams());
+    this.amazonAdView.loadAd(new AdTargetingOptions()); // This AsyncTask retrieves an ad
+    
     AndroidApplicationConfiguration cfg = new AndroidApplicationConfiguration();
     cfg.useGL20 = true;
 
@@ -72,13 +98,21 @@ public class VirtualBeerActivity extends VuforiaAndroidApplication
     game.setVuforia(vuforia);
     game.setDialog(new AndroidOSDialog(this));
     
-    
     gameview = initializeForView(game, cfg);
     
     layout.addView(gameview, createLayoutParams());
-    layout.addView(adView, adParams);
+    layout.addView(amazonAdView);
     layout.setPadding(0, 1, 0, 0);
     setContentView(layout);
+  }
+
+  private RelativeLayout.LayoutParams createAdParams()
+  {
+    RelativeLayout.LayoutParams adParams = new RelativeLayout.LayoutParams
+        (RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+//    adParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+//    adParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+    return adParams;
   }
 
   private void createVuforiaInstance()
