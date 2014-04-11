@@ -10,9 +10,11 @@ public class RobovmLauncher extends IOSApplication.Delegate {
 	@Override
 	protected IOSApplication createApplication() {
 		IOSApplicationConfiguration config = new IOSApplicationConfiguration();
-		config.orientationLandscape = true;
-		config.orientationPortrait = false;
-		return new IOSApplication(new VirtualBeerGame(), config);
+		config.orientationLandscape = false;
+		config.orientationPortrait = true;
+		
+		VirtualBeerGame game = new VirtualBeerGame();
+		return new IOSApplication(game, config);
 	}
 
 	public static void main(String[] argv) {
