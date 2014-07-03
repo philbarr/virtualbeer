@@ -272,6 +272,7 @@ public class VuforiaAndroidApplication extends Activity implements Application {
 	@Override
 	protected void onDestroy () {
 		super.onDestroy();
+		Vuforia.deinit();
 	}
 
 	@Override

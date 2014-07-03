@@ -1,9 +1,7 @@
 package com.simplyapped.libgdx.ext.vuforia;
 
-import com.qualcomm.vuforia.HINT;
+import com.qualcomm.vuforia.Frame;
 import com.qualcomm.vuforia.State;
-import com.qualcomm.vuforia.TrackableResult;
-import com.qualcomm.vuforia.Vuforia;
 
 public class AndroidVuforiaState implements VuforiaState {
 
@@ -12,8 +10,6 @@ public class AndroidVuforiaState implements VuforiaState {
 	public AndroidVuforiaState(State state) {
 		this.state = state;
 	}
-
-
 	
 	@Override
 	public int getNumTrackableResults()
@@ -38,4 +34,21 @@ public class AndroidVuforiaState implements VuforiaState {
 	{
 		return new AndroidVuforiaTrackableResult(state.getTrackableResult(index));
 	}
+
+
+
+  @Override
+  public VuforiaFrame getFrame()
+  {
+    return new AndroidVuforiaFrame(state.getFrame());
+  }
+
+
+
+  @Override
+  public int getNumImages()
+  {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 }
