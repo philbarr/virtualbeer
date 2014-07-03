@@ -22,4 +22,18 @@ public class DesktopVuforiaState implements VuforiaState {
 		return 1;
 	}
 
+  @Override
+  public VuforiaFrame getFrame()
+  {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public int getNumImages()
+  {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
 }
