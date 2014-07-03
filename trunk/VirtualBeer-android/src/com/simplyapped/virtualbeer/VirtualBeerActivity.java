@@ -1,6 +1,7 @@
 package com.simplyapped.virtualbeer;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -17,12 +18,15 @@ import com.amazon.device.ads.AdRegistration;
 import com.amazon.device.ads.AdTargetingOptions;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.VuforiaAndroidApplication;
+import com.facebook.UiLifecycleHelper;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.simplyapped.libgdx.ext.facebook.AndroidFacebook;
+import com.simplyapped.libgdx.ext.facebook.Facebook;
+import com.simplyapped.libgdx.ext.facebook.FacebookStatusCallBack;
 import com.simplyapped.libgdx.ext.ui.AndroidOSDialog;
 import com.simplyapped.libgdx.ext.vuforia.AndroidVuforiaSession;
-import com.simplyapped.libgdx.ext.vuforia.VuforiaException;
 
 public class VirtualBeerActivity extends VuforiaAndroidApplication
 {
@@ -32,6 +36,8 @@ public class VirtualBeerActivity extends VuforiaAndroidApplication
   private View gameview;
   private AdLayout amazonAdView;
   private RelativeLayout layout;
+  private UiLifecycleHelper facebookHelper;
+  private FacebookStatusCallBack facebookCallback;
 
   private class AdSwitcher extends AmazonAdListenerAdapter{
     
@@ -65,6 +71,14 @@ public class VirtualBeerActivity extends VuforiaAndroidApplication
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+    //FacebookDialog.OpenGraphActionDialogBuilder d;d.canPresent()
+//    WebDialog.FeedDialogBuilder f;f.
+    facebookCallback = new FacebookStatusCallBack();
+    facebookHelper = new UiLifecycleHelper(this, facebookCallback);
+    facebookHelper.onCreate(savedInstanceState);
+    
+    Facebook fb = new AndroidFacebook(this, facebookCallback, facebookHelper);
+    
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     getWindow().setFlags( 
         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, 
@@ -145,17 +159,35 @@ public class VirtualBeerActivity extends VuforiaAndroidApplication
   }
   
   @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data)
+  {
+    super.onActivityResult(requestCode, resultCode, data);
+    facebookHelper.onActivityResult(requestCode, resultCode, data, facebookCallback);
+  }
+  
+  @Override
+  protected void onResume() {
+      super.onResume();
+      facebookHelper.onResume();
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+      super.onSaveInstanceState(outState);
+      facebookHelper.onSaveInstanceState(outState);
+  }
+
+  @Override
+  public void onPause() {
+      super.onPause();
+      facebookHelper.onPause();
+  }
+
+  @Override
   protected void onDestroy()
   {
     super.onDestroy();
-    try
-    {
-      vuforia.deinit();
-    }
-    catch (VuforiaException e)
-    {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    facebookHelper.onDestroy();
+    
   }
 }
