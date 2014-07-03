@@ -15,4 +15,5 @@ public interface MenuStageListener {
 
   void focus();
 	
+  void takeSnapshot();
 }
