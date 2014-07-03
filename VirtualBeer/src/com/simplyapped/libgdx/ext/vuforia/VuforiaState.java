@@ -10,4 +10,8 @@ public interface VuforiaState {
 
 	public abstract int getNumTrackableResults();
 
+  public abstract VuforiaFrame getFrame();
+  
+  int getNumImages();
+
 }

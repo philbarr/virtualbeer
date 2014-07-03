@@ -3,7 +3,6 @@ package com.simplyapped.virtualbeer;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -22,8 +21,11 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
+import com.simplyapped.libgdx.ext.facebook.Facebook;
+import com.simplyapped.libgdx.ext.facebook.OnPublishListener;
 import com.simplyapped.libgdx.ext.ui.OSDialog;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaException;
+import com.simplyapped.libgdx.ext.vuforia.VuforiaImage;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaImageTargetBuilder;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaListener;
 import com.simplyapped.libgdx.ext.vuforia.VuforiaSession;
@@ -39,6 +41,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   public AssetManager assets;
   public Array<ModelInstance> instances = new Array<ModelInstance>();
   public Environment lights;
+  private Facebook facebook;
   private VuforiaSession vuforia;
   private ModelInstance instance;
   private Environment environment;
@@ -56,6 +59,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
   private int fieldOfView = 90;
   private Model beerModel;
   private boolean animComplete;
+  private boolean takeSnapshot;
   
   @Override
   public void create()
@@ -281,6 +285,37 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
             stage.setLight(MenuStage.LIGHTSTRIPOFF);
             if (builder!=null) builder.startScan();
         }
+        if (takeSnapshot)
+        {
+          VuforiaImage image = state.getFrame().getImage();
+          facebook.uploadPhoto(image.getBytes().array(), "Virtual Beer", new OnPublishListener()
+          {
+            
+            @Override
+            public void onError()
+            {
+              dialog.showShortToast("Failed to upload photo");
+            }
+            
+            @Override
+            public void onComplete()
+            {
+              dialog.showShortToast("Photo uploaded");
+            }
+            
+            @Override
+            public void onCall(Exception exception)
+            {
+              if (exception !=null)
+              {
+                dialog.showShortToast(exception.toString());
+              }
+            }
+          });
+          takeSnapshot = false;
+          vuforia.clearAllTrackables();
+          setIsTrackingTarget(false);
+        }
       }
       catch (Exception e)
       {
@@ -334,8 +369,7 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
     {
       if (isTrackingTarget)
       {
-        vuforia.clearAllTrackables();
-        setIsTrackingTarget(false);
+        takeSnapshot = true;
       }
       else
       {
@@ -373,5 +407,17 @@ public class VirtualBeerGame implements ApplicationListener, VuforiaListener, An
       vuforia.doFocusCamera();
     }
     
+  }
+
+  @Override
+  public void takeSnapshot()
+  {
+    takeSnapshot = true;
+  }
+
+
+  public void setFacebook(Facebook facebook)
+  {
+    this.facebook = facebook;
   }
 }
